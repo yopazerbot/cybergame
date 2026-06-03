@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchScores, type ScoreEntry, type ScoreMode } from '../../core/api';
+import { fetchScores, type ScoreEntry, type RecBucket } from '../../core/api';
+import type { Mode } from '../../core/types';
 
 const ENDING_ICON: Record<string, string> = {
   exemplary: '🏆',
@@ -23,12 +24,14 @@ export function Scoreboard({
   scores: provided,
   highlightTs,
   limit = 10,
-  mode,
+  rec,
+  campaign,
 }: {
   scores?: ScoreEntry[];
   highlightTs?: number;
   limit?: number;
-  mode?: ScoreMode;
+  rec?: RecBucket;
+  campaign?: Mode;
 }) {
   const [list, setList] = useState<ScoreEntry[] | null>(provided ?? null);
 
@@ -38,11 +41,11 @@ export function Scoreboard({
       return;
     }
     let alive = true;
-    fetchScores(mode).then((s) => alive && setList(s));
+    fetchScores({ rec, campaign }).then((s) => alive && setList(s));
     return () => {
       alive = false;
     };
-  }, [provided, mode]);
+  }, [provided, rec, campaign]);
 
   if (list === null) return <div className="scoreboard-state">Loading leaderboard…</div>;
   if (list.length === 0)
@@ -60,9 +63,13 @@ export function Scoreboard({
             <span className={`diff-tag ${s.difficulty}`} title={`difficulty: ${s.difficulty}`}>
               {DIFF_ICON[s.difficulty] ?? ''} {DIFF_LABEL[s.difficulty] ?? s.difficulty}
             </span>
+            {s.headline && <span className="headline-tag">{s.headline}</span>}
             <span title={s.ending}>{ENDING_ICON[s.ending] ?? ''}</span>
           </span>
-          <span className="pts">{s.score.toLocaleString()}</span>
+          <span className="pts">
+            {s.score}
+            {s.grade ? <span className="pts-grade"> · {s.grade}</span> : null}
+          </span>
         </li>
       ))}
     </ol>

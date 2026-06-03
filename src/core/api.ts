@@ -1,13 +1,19 @@
-import type { Difficulty } from './types';
+import type { Difficulty, Mode } from './types';
 
 // Thin client for the cross-session scoreboard API. All calls fail soft so the
 // game still works fully offline / without the backend.
 
-export type ScoreMode = 'with' | 'without';
+/** Whether to filter the board to the guided ('with') or solo ('without') runs. */
+export type RecBucket = 'with' | 'without';
 
 export interface ScoreEntry {
   name: string;
-  score: number;
+  score: number; // 0–100 outcome score
+  grade: string; // A–F
+  /** The defining real-world figure for this run (e.g. "€420,000" fine / take). */
+  headline: string;
+  /** Which campaign this run was — boards are kept separate per side. */
+  campaign: Mode;
   ending: string;
   difficulty: Difficulty;
   hoursLeft: number;
@@ -18,9 +24,18 @@ export interface ScoreEntry {
   ts: number;
 }
 
-export async function fetchScores(mode?: ScoreMode): Promise<ScoreEntry[]> {
+export interface FetchOpts {
+  rec?: RecBucket;
+  campaign?: Mode;
+}
+
+export async function fetchScores(opts: FetchOpts = {}): Promise<ScoreEntry[]> {
   try {
-    const res = await fetch(`/api/scores${mode ? `?mode=${mode}` : ''}`);
+    const q = new URLSearchParams();
+    if (opts.rec) q.set('rec', opts.rec);
+    if (opts.campaign) q.set('campaign', opts.campaign);
+    const qs = q.toString();
+    const res = await fetch(`/api/scores${qs ? `?${qs}` : ''}`);
     if (!res.ok) return [];
     const json = await res.json();
     return Array.isArray(json.scores) ? json.scores : [];

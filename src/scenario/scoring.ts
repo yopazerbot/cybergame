@@ -1,5 +1,13 @@
 import type { GameState, Mode, Phase, Role, Ending } from '../core/types';
-import { SCORE_WEIGHTS, DIFFICULTY } from '../core/config';
+import {
+  SCORE,
+  GRADE_BANDS,
+  RECORDS_AT_RISK,
+  DATA_VALUE_PER_RECORD,
+  MAX_FINE,
+  COST_EURO_PER_POINT,
+  DIFFICULTY,
+} from '../core/config';
 import { store } from '../core/store';
 import { eventBus } from '../core/eventBus';
 import { sfx } from '../core/sfx';
@@ -54,41 +62,85 @@ function anyNodesLeft(state: GameState): boolean {
 }
 
 function computeScore(state: GameState): number {
-  const { meters, clock } = state;
-  const hoursRemaining = Math.max(0, clock.deadlineHours - clock.hoursElapsed);
-  const w = SCORE_WEIGHTS;
-  let score =
-    w.compliance * meters.compliance +
-    w.reputation * meters.reputation -
-    w.cost * meters.cost +
-    w.timeRemaining * hoursRemaining;
-
-  // Ideal-sequence bonus for a clean, in-order run.
-  if (idealRun(state)) score += w.orderBonus;
-
-  return Math.round(score);
+  const m = state.meters;
+  // Simple, bounded 0–100: weighted average of the three meters (cost inverted).
+  let s =
+    (SCORE.compliance * m.compliance +
+      SCORE.reputation * m.reputation +
+      SCORE.costInv * (100 - m.cost)) /
+    100;
+  if (idealRun(state)) s += SCORE.cleanBonus;
+  return Math.round(Math.max(0, Math.min(100, s)));
 }
 
-export interface ScorePart {
-  label: string;
-  value: number;
+/** Letter grade for a 0–100 score. */
+export function gradeFor(score: number): string {
+  for (const [min, g] of GRADE_BANDS) if (score >= min) return g;
+  return 'F';
 }
 
-/** Human-readable breakdown of the final score for the debrief. */
-export function scoreBreakdown(state: GameState): ScorePart[] {
-  const { meters, clock } = state;
-  const w = SCORE_WEIGHTS;
-  const hoursRemaining = Math.max(0, clock.deadlineHours - clock.hoursElapsed);
-  const ml = meterLabels(state.mode);
+export interface Outcome {
+  score: number;
+  grade: string;
+  /** The single defining real-world figure (fine incurred / take). */
+  headline: { label: string; value: string };
+  rows: { label: string; value: string }[];
+}
 
-  const parts: ScorePart[] = [
-    { label: ml.compliance.label, value: Math.round(w.compliance * meters.compliance) },
-    { label: ml.reputation.label, value: Math.round(w.reputation * meters.reputation) },
-    { label: ml.cost.label, value: -Math.round(w.cost * meters.cost) },
-    { label: 'Time remaining', value: Math.round(w.timeRemaining * hoursRemaining) },
-  ];
-  if (idealRun(state)) parts.push({ label: 'Ideal-sequence bonus', value: w.orderBonus });
-  return parts;
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+const euro = (n: number) => '€' + Math.round(n).toLocaleString('en-US');
+
+/** Tangible, real-world consequence report shown on the debrief. */
+export function outcomeReport(state: GameState): Outcome {
+  const score = computeScore(state);
+  const grade = gradeFor(score);
+  const m = state.meters;
+  const f = state.flags;
+
+  if (state.mode === 'attacker') {
+    const exfiltrated = !!f.dataExfiltrated;
+    const records = exfiltrated ? Math.round(RECORDS_AT_RISK * (0.4 + m.reputation / 200)) : 0;
+    const take = records * DATA_VALUE_PER_RECORD;
+    const alarms = m.cost < 35 ? 'Low' : m.cost < 70 ? 'Medium' : 'High';
+    const caught = !!f.gotCaught || !f.tracksCovered;
+    const outcome = !exfiltrated ? 'Burned — no data' : caught ? 'Caught' : 'Clean getaway';
+    return {
+      score,
+      grade,
+      headline: { label: 'Take', value: euro(take) },
+      rows: [
+        { label: 'Records stolen', value: records.toLocaleString('en-US') },
+        { label: 'Alarms tripped', value: alarms },
+        { label: 'Stealth', value: `${Math.round(m.compliance)}%` },
+        { label: 'Outcome', value: outcome },
+      ],
+    };
+  }
+
+  const exfil = state.network.exfilPct / 100;
+  const affected = Math.round(RECORDS_AT_RISK * exfil);
+  const notified = !!f.regulatorNotified;
+  const severity = Math.max(exfil, affected > 0 ? 0.15 : 0.05);
+  const culpability = clamp01(
+    (100 - m.compliance) / 100 + (f.coverup ? 0.4 : 0) + (notified ? 0 : 0.25),
+  );
+  const fine = Math.round((MAX_FINE * Math.min(1, severity * culpability * 1.4)) / 5000) * 5000;
+  return {
+    score,
+    grade,
+    headline: { label: 'GDPR fine', value: euro(fine) },
+    rows: [
+      { label: 'Customers affected', value: affected.toLocaleString('en-US') },
+      {
+        label: 'Authority notified',
+        value: notified
+          ? `Yes · ${Math.round(state.clock.hoursElapsed)}h used`
+          : 'NOT notified — 72h missed',
+      },
+      { label: 'Customer trust', value: `${Math.round(m.reputation)}%` },
+      { label: 'Incident cost', value: euro(m.cost * COST_EURO_PER_POINT) },
+    ],
+  };
 }
 
 export function computeEnding(state: GameState): Ending {

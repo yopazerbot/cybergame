@@ -5,7 +5,7 @@ import { eventBus } from '../../core/eventBus';
 import { campaignDebrief } from '../../scenario/campaign';
 import { getUsername, unlockAchievements } from '../../core/profile';
 import { submitScore, type ScoreEntry } from '../../core/api';
-import { scoreBreakdown } from '../../scenario/scoring';
+import { outcomeReport } from '../../scenario/scoring';
 import { earnedAchievements } from '../../scenario/achievements';
 import { Scoreboard } from './Scoreboard';
 import { Credit } from './Credit';
@@ -21,7 +21,7 @@ export function DebriefScreen() {
 
   const hoursLeft = Math.max(0, Math.round(state.clock.deadlineHours - state.clock.hoursElapsed));
   const earned = earnedAchievements(state);
-  const breakdown = scoreBreakdown(state);
+  const outcome = outcomeReport(state);
 
   useEffect(() => {
     if (submitted.current || !ending) return;
@@ -30,6 +30,9 @@ export function DebriefScreen() {
     submitScore({
       name: getUsername() || 'Anonymous',
       score: state.score,
+      grade: outcome.grade,
+      headline: outcome.headline.value,
+      campaign: state.mode,
       ending: ending.id,
       difficulty: state.difficulty,
       hoursLeft,
@@ -62,28 +65,24 @@ export function DebriefScreen() {
 
         <div className="debrief-score">
           <div className="big-score">
-            <span>Final score</span>
-            <strong>{state.score}</strong>
+            <span>Outcome score</span>
+            <strong>
+              {outcome.score}
+              <small>/100</small>
+            </strong>
           </div>
-          <div className="score-meters">
-            <span>⚖️ Compliance {Math.round(state.meters.compliance)}</span>
-            <span>💬 Reputation {Math.round(state.meters.reputation)}</span>
-            <span>💸 Cost {Math.round(state.meters.cost)}</span>
-            <span>
-              ⏱️ {Math.max(0, Math.round(state.clock.deadlineHours - state.clock.hoursElapsed))}h
-              left
-            </span>
+          <div className={`grade-badge grade-${outcome.grade}`}>{outcome.grade}</div>
+          <div className="outcome-headline">
+            <span>{outcome.headline.label}</span>
+            <strong>{outcome.headline.value}</strong>
           </div>
         </div>
 
-        <div className="score-breakdown">
-          {breakdown.map((p) => (
-            <div className="breakdown-row" key={p.label}>
-              <span>{p.label}</span>
-              <strong className={p.value < 0 ? 'neg' : 'pos'}>
-                {p.value > 0 ? '+' : ''}
-                {p.value}
-              </strong>
+        <div className="consequence-report">
+          {outcome.rows.map((r) => (
+            <div className="consequence-row" key={r.label}>
+              <span>{r.label}</span>
+              <strong>{r.value}</strong>
             </div>
           ))}
         </div>
@@ -146,7 +145,7 @@ export function DebriefScreen() {
               {!state.recommendations && board !== null ? (
                 <Scoreboard scores={board} limit={10} highlightTs={myTs} />
               ) : (
-                <Scoreboard mode="without" limit={10} />
+                <Scoreboard rec="without" campaign={state.mode} limit={10} />
               )}
             </div>
             <div className="board-col">
@@ -154,7 +153,7 @@ export function DebriefScreen() {
               {state.recommendations && board !== null ? (
                 <Scoreboard scores={board} limit={10} highlightTs={myTs} />
               ) : (
-                <Scoreboard mode="with" limit={10} />
+                <Scoreboard rec="with" campaign={state.mode} limit={10} />
               )}
             </div>
           </div>

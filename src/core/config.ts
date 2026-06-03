@@ -38,14 +38,35 @@ export const DIFFICULTY = {
  */
 export const HOURS_PER_REAL_SECOND = 0.35;
 
-/** Scoring weights. Compliance dominates so GDPR-correct play wins. */
-export const SCORE_WEIGHTS = {
-  compliance: 1.4,
-  reputation: 1.0,
-  cost: 0.8, // subtracted
-  timeRemaining: 0.4, // per remaining hour fraction
-  orderBonus: 60, // awarded for the ideal sequence
+/**
+ * Outcome score: a simple, bounded 0–100 (weights sum to 100) — half from
+ * compliance/stealth, a third from reputation/loot, a fifth from the inverse of
+ * cost/heat — plus a small clean-run bonus. Replaces the old unbounded points.
+ */
+export const SCORE = {
+  compliance: 50,
+  reputation: 30,
+  costInv: 20,
+  cleanBonus: 6,
 };
+
+/** Letter grade thresholds for the 0–100 score (first match wins, descending). */
+export const GRADE_BANDS: ReadonlyArray<readonly [number, string]> = [
+  [85, 'A'],
+  [70, 'B'],
+  [55, 'C'],
+  [40, 'D'],
+  [0, 'F'],
+];
+
+/** Realism constants for the tangible "consequence report" on the debrief. */
+export const RECORDS_AT_RISK = 50_000; // customer PII rows in the breached table
+export const DATA_VALUE_PER_RECORD = 4; // € street value per stolen record (attacker take)
+export const MAX_FINE = 2_500_000; // € upper fine band for this sim's company
+export const COST_EURO_PER_POINT = 5_000; // 1 cost-meter point ≈ €5k of incident spend
+
+/** Score-model version — bumped to reset the leaderboards when scoring changed. */
+export const SCORE_VERSION = 2;
 
 /** Thresholds (amber/red) for the countdown timer UI. */
 export const TIMER_AMBER_HOURS = 24;

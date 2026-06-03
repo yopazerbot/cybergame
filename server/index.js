@@ -50,18 +50,24 @@ const clampNum = (v, lo, hi, dflt) => {
 
 const byScore = (a, b) => b.score - a.score || a.ts - b.ts;
 
+// Score-model version: only entries from the current model appear, which cleanly
+// resets the boards when scoring changed (legacy unbounded scores are hidden).
+const SCORE_V = 2;
+
 const app = express();
 app.use(express.json({ limit: '16kb' }));
 
-// Optional ?mode=with|without filters to one recommendations bucket. Legacy
-// entries without the field count as "without" (they were unassisted).
-const inBucket = (s, mode) =>
-  mode === 'with' ? Boolean(s.recommended) : mode === 'without' ? !s.recommended : true;
+// Boards are split by recommendations bucket (?rec=with|without) AND by campaign
+// (?campaign=defender|attacker), and only show the current score model.
+const matches = (s, rec, campaign) =>
+  s.v === SCORE_V &&
+  (!rec || (rec === 'with' ? Boolean(s.recommended) : !s.recommended)) &&
+  (!campaign || (s.campaign || 'defender') === campaign);
 
 app.get('/api/scores', (req, res) => {
-  const mode = req.query.mode;
+  const { rec, campaign } = req.query;
   const scores = readScores()
-    .filter((s) => inBucket(s, mode))
+    .filter((s) => matches(s, rec, campaign))
     .sort(byScore)
     .slice(0, TOP_N);
   res.json({ scores });
@@ -71,13 +77,17 @@ app.post('/api/scores', async (req, res) => {
   const b = req.body || {};
   const entry = {
     name: sanitizeName(b.name),
-    score: clampNum(b.score, -100000, 1000000, 0),
+    score: clampNum(b.score, 0, 100, 0),
+    grade: String(b.grade ?? '').slice(0, 2),
+    headline: String(b.headline ?? '').slice(0, 24),
+    campaign: b.campaign === 'attacker' ? 'attacker' : 'defender',
     ending: String(b.ending ?? '').slice(0, 40),
     difficulty: ['easy', 'normal', 'hard'].includes(b.difficulty) ? b.difficulty : 'normal',
     hoursLeft: clampNum(b.hoursLeft, 0, 10000, 0),
     compliance: clampNum(b.compliance, 0, 100, 0),
     reputation: clampNum(b.reputation, 0, 100, 0),
     recommended: Boolean(b.recommended),
+    v: SCORE_V,
     ts: Date.now(),
   };
 
@@ -87,9 +97,8 @@ app.post('/api/scores', async (req, res) => {
   const trimmed = scores.slice(0, MAX_STORED);
   await writeScores(trimmed);
 
-  // Rank the player within their own bucket and return that board, so the
-  // debrief compares like-for-like (assisted vs unassisted runs don't mix).
-  const bucket = trimmed.filter((s) => Boolean(s.recommended) === entry.recommended);
+  // Rank the player within their own board (same campaign + recommendations bucket).
+  const bucket = trimmed.filter((s) => matches(s, entry.recommended ? 'with' : 'without', entry.campaign));
   const rank = bucket.findIndex((s) => s.ts === entry.ts && s.name === entry.name) + 1;
   res.json({ ok: true, rank: rank || null, total: bucket.length, entry, scores: bucket.slice(0, TOP_N) });
 });

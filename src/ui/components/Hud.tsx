@@ -5,6 +5,7 @@ import { sfx } from '../../core/sfx';
 import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
 import { meterLabels } from '../../scenario/campaign';
+import { gradeFor } from '../../scenario/scoring';
 
 function Meter({
   label,
@@ -104,7 +105,7 @@ export function Hud() {
         <div className="score">
           <span className="score-ico">⭐</span>
           <span className="score-val">{state.score}</span>
-          <span className="score-cap">pts</span>
+          <span className="score-cap">/100 · {gradeFor(state.score)}</span>
         </div>
         <div className="hud-buttons">
           <button className="mute-btn" onClick={restart} title="Restart game (R)" aria-label="Restart game">

@@ -218,15 +218,17 @@ export function StartScreen() {
         </button>
 
         <div className="leaderboard-block">
-          <h3 className="section-title">🏆 Global leaderboards</h3>
+          <h3 className="section-title">
+            🏆 {mode === 'attacker' ? 'Attacker' : 'Defender'} leaderboards
+          </h3>
           <div className="board-split">
             <div className="board-col">
               <h4>🎯 Solo · no hints</h4>
-              <Scoreboard mode="without" limit={6} />
+              <Scoreboard rec="without" campaign={mode} limit={6} />
             </div>
             <div className="board-col">
               <h4>🤝 Guided · recommendations</h4>
-              <Scoreboard mode="with" limit={6} />
+              <Scoreboard rec="with" campaign={mode} limit={6} />
             </div>
           </div>
             </div>
