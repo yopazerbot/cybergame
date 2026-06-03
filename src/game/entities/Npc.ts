@@ -84,6 +84,16 @@ export class Npc extends Phaser.GameObjects.Container {
       repeat: -1,
       ease: 'Sine.inOut',
     });
+
+    // Idle look-around: every few seconds an NPC may turn, so they read as alive
+    // rather than as frozen statues.
+    scene.time.addEvent({
+      delay: Phaser.Math.Between(2800, 5200),
+      loop: true,
+      callback: () => {
+        if (Math.random() < 0.55) body.setFlipX(!body.flipX);
+      },
+    });
   }
 
   private makeNameplate(scene: Phaser.Scene): Phaser.GameObjects.Container {

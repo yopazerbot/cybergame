@@ -439,6 +439,16 @@ export function generateTextures(scene: Phaser.Scene): void {
     g.fillRect(cx - 10, 3, 7, 5);
     g.fillStyle(0x8fb3ff, 1);
     g.fillRect(cx + 3, 3, 7, 5);
+    // Tiny "window" UI so the screens read up close: a title bar + code/text lines.
+    g.fillStyle(0x2b3242, 1);
+    g.fillRect(cx - 10, 3, 7, 1.4);
+    g.fillRect(cx + 3, 3, 7, 1.4);
+    g.fillStyle(0x163a82, 0.85);
+    g.fillRect(cx - 9, 5.2, 5, 0.7);
+    g.fillRect(cx - 9, 6.4, 3, 0.7);
+    g.fillStyle(0x1f6b5e, 0.85);
+    g.fillRect(cx + 4, 5.2, 4, 0.7);
+    g.fillRect(cx + 4, 6.4, 5, 0.7);
     // Keyboard.
     g.fillStyle(0x3a4255, 1);
     g.fillRoundedRect(cx - 7, 11, 14, 4, 1.5);
