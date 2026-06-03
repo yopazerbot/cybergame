@@ -344,8 +344,8 @@ export const NODES: DecisionNode[] = [
     heading: 'Is this a notifiable personal-data breach?',
     prompt:
       "Mara (DPO): \"I have Sam's forensic scope. 48,200 data subjects; identifiers plus dates of " +
-      'birth and password hashes. Card data is out of scope (tokenised). I need to make the ' +
-      'Article 33 / 34 call. What is your position?"',
+      'birth and password hashes. Card data is out of scope (tokenised). My role is to advise — ' +
+      'the controller makes the Article 33 / 34 call. What do you want to put to them?"',
     choices: [
       {
         id: 'dpo_assess_good',
@@ -361,10 +361,11 @@ export const NODES: DecisionNode[] = [
           advancePhaseTo: 'notification',
         },
         feedback:
-          'Correct analysis. This is personal data, the confidentiality breach is confirmed, and ' +
-          'the combination of identity data + DoB + reused-password risk means it is "likely to ' +
-          'result in a high risk to rights and freedoms" → Art. 33 notification to the authority ' +
-          'AND Art. 34 communication to the data subjects. You log it in the Art. 33(5) register.',
+          'Correct analysis. This is personal data and the confidentiality breach is confirmed, so ' +
+          'it clears the Art. 33 threshold (a risk to rights and freedoms) → notify the authority. ' +
+          'The combination of identity data + DoB + reused-password risk pushes it to "likely to ' +
+          'result in a high risk," which also triggers Art. 34 communication to the data subjects. ' +
+          'You log it in the Art. 33(5) register either way.',
       },
       {
         id: 'dpo_assess_downplay',
@@ -427,9 +428,10 @@ export const NODES: DecisionNode[] = [
           setFlags: ['mgmtApproved'],
         },
         feedback:
-          'You do not have to know everything to notify — Art. 33 explicitly allows phased / ' +
+          'You do not have to know everything to notify — Art. 33(4) explicitly allows phased / ' +
           'incomplete notification, and the 72-hour clock does not pause while you "get the full ' +
-          'picture." Delay just eats the deadline.',
+          'picture." A notification later than 72h is still possible but must be accompanied by ' +
+          'reasons for the delay. Sitting on it just eats the deadline.',
       },
       {
         id: 'mgmt_signoff_coverup',
@@ -476,8 +478,8 @@ export const NODES: DecisionNode[] = [
         },
         feedback:
           'This is the headline GDPR obligation, met correctly. You provided the four required ' +
-          'elements of Art. 33(3) and used the permitted phased approach for anything still under ' +
-          'investigation. The DPO is named as the contact point.',
+          'elements of Art. 33(3) and used the phased approach permitted by Art. 33(4) for anything ' +
+          'still under investigation. The DPO is named as the contact point.',
       },
       {
         id: 'regulator_notify_premature',

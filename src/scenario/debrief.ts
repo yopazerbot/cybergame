@@ -33,25 +33,34 @@ export const GDPR_DEBRIEF: DebriefItem[] = [
     heading: '4 · The 72-hour clock (Art. 33)',
     body:
       'You must notify the supervisory authority without undue delay and, where feasible, within ' +
-      '72 hours of becoming aware of a personal-data breach that is likely to risk individuals\' ' +
-      'rights and freedoms. The clock does not pause while you investigate — Art. 33 explicitly ' +
-      'allows phased notification, so notify with what you know and follow up with the rest.',
+      '72 hours of becoming aware of a personal-data breach — unless it is unlikely to result in a ' +
+      'risk to individuals\' rights and freedoms. Notification is risk-based, not automatic for ' +
+      'every breach. "Aware" means you have a reasonable degree of certainty a breach has occurred. ' +
+      'The clock does not pause while you investigate — Art. 33(4) allows phased notification, so ' +
+      'notify with what you know and follow up with the rest; a notification after 72h must explain ' +
+      'the reasons for the delay.',
   },
   {
     heading: '5 · Involve the DPO; document everything',
     body:
-      'The DPO makes the notifiability and risk call and is the named contact in the filing. ' +
-      'Every breach must be recorded in the Art. 33(5) internal register (facts, effects, ' +
-      'remedial action) whether or not it is notified — that record is your evidence of ' +
-      'accountability under Art. 5(2).',
+      'The DPO advises on and monitors the notifiability and risk assessment and is the named ' +
+      'contact in the filing, but the controller makes the decision (Art. 39). If a processor ' +
+      'detects the breach, it must notify the controller without undue delay (Art. 33(2)) — the ' +
+      '72-hour clock is the controller\'s. Every breach must be recorded in the Art. 33(5) internal ' +
+      'register (facts, effects, remedial action) whether or not it is notified — that record is ' +
+      'your evidence of accountability under Art. 5(2).',
   },
   {
     heading: '6 · Tell the people affected (Art. 34)',
     body:
-      'When a breach is likely to result in a high risk, you must also communicate it to the data ' +
-      'subjects in clear, plain language: what happened, the likely consequences, and concrete ' +
-      'steps they can take (reset reused passwords, watch for phishing). "Hashed" passwords are ' +
-      'not a free pass — weak ones still crack, and names + DoB + email enable fraud.',
+      'Art. 34 sets a higher bar than Art. 33: only when a breach is likely to result in a HIGH ' +
+      'risk must you also communicate it to the data subjects, in clear, plain language — what ' +
+      'happened, the likely consequences, and concrete steps they can take (reset reused passwords, ' +
+      'watch for phishing). Art. 34(3) carves out exceptions: e.g. the data was rendered ' +
+      'unintelligible by appropriate encryption, subsequent measures mean the high risk is no longer ' +
+      'likely, or individual contact would take disproportionate effort (then a public communication ' +
+      'instead). "Hashed" passwords are not an automatic free pass — weak ones still crack, and ' +
+      'names + DoB + email enable fraud.',
   },
   {
     heading: '7 · Never conceal a notifiable breach',
