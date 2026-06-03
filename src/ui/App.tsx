@@ -7,6 +7,7 @@ import { DebriefScreen } from './components/DebriefScreen';
 import { TalkPrompt } from './components/TalkPrompt';
 import { Toasts } from './components/Toasts';
 import { ControlsLegend } from './components/ControlsLegend';
+import { Tutorial } from './components/Tutorial';
 
 export function App() {
   const state = useStore();
@@ -21,6 +22,7 @@ export function App() {
           <ObjectiveTracker />
           <ControlsLegend />
           <Toasts />
+          <Tutorial />
           {!state.activeDialogue && state.npcInRange && <TalkPrompt npcId={state.npcInRange} />}
           {state.activeDialogue && <DialoguePanel npcId={state.activeDialogue.npcId} />}
         </>

@@ -16,6 +16,8 @@ export interface EventMap {
   restart: void;
   /** Transient on-screen toast (meter changes, phase changes). */
   notify: { text: string; tone: 'good' | 'bad' | 'info' };
+  /** Replay the onboarding tutorial. */
+  startTutorial: void;
 }
 
 type Handler<K extends keyof EventMap> = (payload: EventMap[K]) => void;

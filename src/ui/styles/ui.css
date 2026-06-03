@@ -684,6 +684,97 @@ kbd {
   background: #fff;
 }
 
+.hud-buttons {
+  display: flex;
+  gap: 6px;
+  align-self: flex-end;
+}
+
+/* ---------- small / ghost buttons ---------- */
+.btn.small {
+  padding: 7px 14px;
+  font-size: 13px;
+  border-radius: 11px;
+}
+.btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-soft);
+  box-shadow: none;
+}
+.btn.ghost:hover {
+  background: var(--paper-2);
+  box-shadow: none;
+}
+
+/* ---------- tutorial ---------- */
+.tutorial-card {
+  position: absolute;
+  bottom: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(440px, calc(100% - 48px));
+  display: flex;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+  pointer-events: auto;
+  animation: slideUp 0.2s ease;
+  border-top: 4px solid var(--brand);
+}
+.tutorial-ico {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+.tutorial-body {
+  flex: 1;
+}
+.tutorial-title {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 17px;
+  color: var(--ink);
+}
+.tutorial-body p {
+  margin: 4px 0 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.tutorial-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.tutorial-dots {
+  display: flex;
+  gap: 6px;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--line);
+}
+.dot.on {
+  background: var(--brand);
+  transform: scale(1.2);
+}
+.tutorial-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tutorial-wait {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-dk);
+  font-style: italic;
+}
+
 /* ---------- controls legend ---------- */
 .controls-legend {
   position: absolute;

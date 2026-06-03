@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../useStore';
 import { Timer } from './Timer';
 import { sfx } from '../../core/sfx';
+import { eventBus } from '../../core/eventBus';
 
 function Meter({
   label,
@@ -57,9 +58,18 @@ export function Hud() {
         <div className="score">
           Score <strong>{state.score}</strong>
         </div>
-        <button className="mute-btn" onClick={toggleMute} title="Toggle sound">
-          {muted ? '🔇' : '🔊'}
-        </button>
+        <div className="hud-buttons">
+          <button
+            className="mute-btn"
+            onClick={() => eventBus.emit('startTutorial', undefined)}
+            title="Replay tutorial"
+          >
+            ❔
+          </button>
+          <button className="mute-btn" onClick={toggleMute} title="Toggle sound">
+            {muted ? '🔇' : '🔊'}
+          </button>
+        </div>
       </div>
     </div>
   );
