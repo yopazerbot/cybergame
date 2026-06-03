@@ -106,77 +106,89 @@ function makeBox(
   g.destroy();
 }
 
-/** A friendly, more detailed character: shadow, shoes, shaded body, arms, head with face. */
+/** A taller, Habbo-style avatar: dark outline, big head, shaded torso, legs + shoes, face. */
 function makeCharacter(scene: Phaser.Scene, key: string, body: number, accent: number): void {
-  const w = 52;
-  const h = 78;
+  const w = 58;
+  const h = 96;
   const cx = w / 2;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  const dark = Phaser.Display.Color.IntegerToColor(body).darken(22).color;
-  const light = Phaser.Display.Color.IntegerToColor(body).lighten(16).color;
-  const hairDark = Phaser.Display.Color.IntegerToColor(accent).darken(12).color;
+  const dark = Phaser.Display.Color.IntegerToColor(body).darken(26).color;
+  const light = Phaser.Display.Color.IntegerToColor(body).lighten(18).color;
+  const skin = 0xfcd9b0;
+  const skinDk = 0xe9b98a;
+  const hairDark = Phaser.Display.Color.IntegerToColor(accent).darken(14).color;
+  const OUT = 0x232a3d; // outline colour
 
   // Drop shadow.
-  g.fillStyle(0x16203a, 0.2);
-  g.fillEllipse(cx, h - 4, 34, 11);
+  g.fillStyle(0x16203a, 0.22);
+  g.fillEllipse(cx, h - 4, 40, 13);
 
-  // Legs + shoes.
-  g.fillStyle(0x3a4055, 1);
-  g.fillRoundedRect(cx - 11, 52, 9, 15, 4);
-  g.fillRoundedRect(cx + 2, 52, 9, 15, 4);
-  g.fillStyle(0x20242f, 1);
-  g.fillRoundedRect(cx - 12, 63, 11, 6, 3);
-  g.fillRoundedRect(cx + 1, 63, 11, 6, 3);
+  // Trousers + legs.
+  g.lineStyle(2, OUT, 0.5);
+  g.fillStyle(0x3a4157, 1);
+  g.fillRoundedRect(cx - 12, 58, 11, 20, 4);
+  g.fillRoundedRect(cx + 1, 58, 11, 20, 4);
+  g.strokeRoundedRect(cx - 12, 58, 11, 20, 4);
+  g.strokeRoundedRect(cx + 1, 58, 11, 20, 4);
+  // Shoes.
+  g.fillStyle(0x23283a, 1);
+  g.fillRoundedRect(cx - 14, 75, 13, 8, 3);
+  g.fillRoundedRect(cx + 1, 75, 13, 8, 3);
 
   // Arms.
   g.fillStyle(dark, 1);
-  g.fillRoundedRect(cx - 19, 30, 8, 23, 4);
-  g.fillRoundedRect(cx + 11, 30, 8, 23, 4);
-  g.fillStyle(0xffe0bd, 1); // hands
-  g.fillCircle(cx - 15, 52, 3.5);
-  g.fillCircle(cx + 15, 52, 3.5);
+  g.lineStyle(2, OUT, 0.45);
+  g.fillRoundedRect(cx - 21, 33, 9, 26, 4);
+  g.fillRoundedRect(cx + 12, 33, 9, 26, 4);
+  g.strokeRoundedRect(cx - 21, 33, 9, 26, 4);
+  g.strokeRoundedRect(cx + 12, 33, 9, 26, 4);
+  g.fillStyle(skin, 1); // hands
+  g.fillCircle(cx - 16, 58, 4);
+  g.fillCircle(cx + 16, 58, 4);
 
-  // Body with shading.
+  // Torso with shading.
   g.fillStyle(body, 1);
-  g.fillRoundedRect(cx - 15, 26, 30, 31, 12);
-  g.fillStyle(light, 0.5); // top-left light
-  g.fillRoundedRect(cx - 15, 26, 30, 13, 12);
-  g.fillStyle(dark, 0.55); // bottom shade
-  g.fillRoundedRect(cx - 15, 48, 30, 9, 8);
-  // Collar V.
+  g.fillRoundedRect(cx - 17, 30, 34, 34, 13);
+  g.fillStyle(light, 0.55);
+  g.fillRoundedRect(cx - 17, 30, 34, 14, 13);
+  g.fillStyle(dark, 0.5);
+  g.fillRoundedRect(cx - 17, 54, 34, 10, 9);
+  // Collar.
   g.fillStyle(accent, 1);
-  g.fillTriangle(cx - 6, 27, cx + 6, 27, cx, 38);
-  g.fillStyle(0xffe0bd, 1);
-  g.fillTriangle(cx - 3, 27, cx + 3, 27, cx, 33);
-  // Body outline.
-  g.lineStyle(1.5, 0x222a3d, 0.18);
-  g.strokeRoundedRect(cx - 15, 26, 30, 31, 12);
+  g.fillTriangle(cx - 7, 31, cx + 7, 31, cx, 44);
+  g.fillStyle(skin, 1);
+  g.fillTriangle(cx - 3, 31, cx + 3, 31, cx, 37);
+  // Torso outline.
+  g.lineStyle(2, OUT, 0.5);
+  g.strokeRoundedRect(cx - 17, 30, 34, 34, 13);
 
   // Head.
-  g.fillStyle(0xffe0bd, 1);
-  g.fillCircle(cx, 16, 12.5);
-  g.lineStyle(1.5, 0x222a3d, 0.16);
-  g.strokeCircle(cx, 16, 12.5);
+  g.fillStyle(skin, 1);
+  g.fillCircle(cx, 18, 14);
+  g.fillStyle(skinDk, 0.5);
+  g.fillEllipse(cx + 5, 22, 14, 16);
+  g.lineStyle(2, OUT, 0.5);
+  g.strokeCircle(cx, 18, 14);
   // Ears.
-  g.fillStyle(0xf2cda6, 1);
-  g.fillCircle(cx - 12, 17, 2.4);
-  g.fillCircle(cx + 12, 17, 2.4);
+  g.fillStyle(skin, 1);
+  g.fillCircle(cx - 13, 19, 2.6);
+  g.fillCircle(cx + 13, 19, 2.6);
   // Hair.
   g.fillStyle(accent, 1);
-  g.fillRoundedRect(cx - 13, 3, 26, 11, 6);
+  g.fillRoundedRect(cx - 14, 3, 28, 12, 7);
   g.fillStyle(hairDark, 1);
-  g.fillRect(cx - 13, 11, 26, 2);
-  g.fillCircle(cx - 9, 6, 4);
-  g.fillCircle(cx, 4, 5);
-  g.fillCircle(cx + 9, 6, 4);
-  // Eyes.
+  g.fillRect(cx - 14, 12, 28, 2);
+  g.fillCircle(cx - 10, 6, 4.5);
+  g.fillCircle(cx, 4, 5.5);
+  g.fillCircle(cx + 10, 6, 4.5);
+  // Eyes + brows.
   g.fillStyle(0x2a2f44, 1);
-  g.fillCircle(cx - 4.5, 17, 1.8);
-  g.fillCircle(cx + 4.5, 17, 1.8);
+  g.fillCircle(cx - 5, 19, 2);
+  g.fillCircle(cx + 5, 19, 2);
   // Smile.
-  g.lineStyle(1.4, 0xb07a4e, 1);
+  g.lineStyle(1.6, 0xb07a4e, 1);
   g.beginPath();
-  g.arc(cx, 19, 4, 0.18 * Math.PI, 0.82 * Math.PI, false);
+  g.arc(cx, 21, 4.5, 0.18 * Math.PI, 0.82 * Math.PI, false);
   g.strokePath();
 
   g.generateTexture(key, w, h);
@@ -207,16 +219,30 @@ export function generateTextures(scene: Phaser.Scene): void {
   makeTileHighlight(scene, TEX_TILE_HI);
   makeShadow(scene, TEX_SHADOW);
 
-  // Wall with a soft top trim + light strips on the visible faces.
-  makeBox(scene, 'wall', 42, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g) => {
-    // Subtle skirting highlight where each face meets the top.
-    g.fillStyle(WALL_WINDOW, 0.35);
+  // Habbo-style wall: tall, with a bright top trim and a darker skirting band.
+  makeBox(scene, 'wall', 54, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g, h) => {
+    const band = (x1: number, y1: number, x2: number, y2: number, off: number, depth: number) => [
+      { x: x1, y: y1 + off },
+      { x: x2, y: y2 + off },
+      { x: x2, y: y2 + off + depth },
+      { x: x1, y: y1 + off + depth },
+    ];
+    // Top trim highlight on both visible faces.
+    g.fillStyle(0xffffff, 0.22);
+    g.fillPoints(band(0, TILE_H / 2, TILE_W / 2, TILE_H, 0, 6), true);
+    g.fillPoints(band(TILE_W, TILE_H / 2, TILE_W / 2, TILE_H, 0, 6), true);
+    // Dark skirting near the floor.
+    g.fillStyle(0x000000, 0.16);
+    g.fillPoints(band(0, TILE_H / 2, TILE_W / 2, TILE_H, h - 8, 8), true);
+    g.fillPoints(band(TILE_W, TILE_H / 2, TILE_W / 2, TILE_H, h - 8, 8), true);
+    // Subtle window on the right face.
+    g.fillStyle(WALL_WINDOW, 0.7);
     g.fillPoints(
       [
-        { x: 4, y: TILE_H / 2 + 4 },
-        { x: TILE_W / 2 - 2, y: TILE_H + 2 },
-        { x: TILE_W / 2 - 2, y: TILE_H + 8 },
-        { x: 4, y: TILE_H / 2 + 10 },
+        { x: TILE_W - 6, y: TILE_H / 2 + 14 },
+        { x: TILE_W / 2 + 8, y: TILE_H + 6 },
+        { x: TILE_W / 2 + 8, y: TILE_H + 24 },
+        { x: TILE_W - 6, y: TILE_H / 2 + 32 },
       ],
       true,
     );
@@ -244,6 +270,23 @@ export function generateTextures(scene: Phaser.Scene): void {
     g.fillStyle(0x3a8a5f, 1);
     g.fillCircle(TILE_W / 2 - 5, 1, 7);
     g.fillCircle(TILE_W / 2 + 5, 0, 6);
+    g.fillStyle(0x6fd49b, 1);
+    g.fillCircle(TILE_W / 2 - 2, -5, 5);
+  });
+  // Filing cabinet with drawer handles.
+  makeBox(scene, 'cabinet', 30, 0xb9c2d4, 0x95a0b8, 0x7c889f, (g, h) => {
+    g.fillStyle(0x6b768a, 1);
+    for (let i = 0; i < 3; i++) {
+      const yy = TILE_H / 2 + 8 + i * (h / 3 - 2);
+      g.fillRoundedRect(8, yy, 12, 3, 1.5);
+    }
+  });
+  // Water cooler.
+  makeBox(scene, 'cooler', 26, 0xdfe7f0, 0xc3cdda, 0xaab6c6, (g) => {
+    g.fillStyle(0x6cc6e8, 0.9);
+    g.fillCircle(TILE_W / 2, 0, 8);
+    g.fillStyle(0x9ad9f0, 0.9);
+    g.fillCircle(TILE_W / 2 - 3, -2, 4);
   });
 
   makeCharacter(scene, CHAR_PLAYER, 0x2d6cdf, 0x163a82);

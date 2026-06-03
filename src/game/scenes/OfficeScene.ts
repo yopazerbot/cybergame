@@ -19,9 +19,13 @@ const FURNITURE: { gx: number; gy: number; key: string }[] = [
   { gx: 6, gy: 5, key: 'desk' },
   { gx: 3, gy: 1, key: 'server' },
   { gx: 4, gy: 1, key: 'server' },
+  { gx: 8, gy: 1, key: 'cabinet' },
+  { gx: 10, gy: 1, key: 'cooler' },
   { gx: 1, gy: 11, key: 'plant' },
   { gx: 11, gy: 11, key: 'plant' },
   { gx: 1, gy: 6, key: 'plant' },
+  { gx: 1, gy: 8, key: 'plant' },
+  { gx: 11, gy: 9, key: 'plant' },
 ];
 
 const ACCENT_TILES = new Set(['5,6', '6,6', '5,7', '6,7']);
@@ -129,9 +133,16 @@ export class OfficeScene extends Phaser.Scene {
   private frameCamera(): void {
     const cam = this.cameras.main;
     const center = this.toWorld((GRID_SIZE - 1) / 2, (GRID_SIZE - 1) / 2);
-    const zoom = Phaser.Math.Clamp(Math.min(cam.width / 920, cam.height / 760), 0.6, 1.3);
+    // Fit the room to ~85% of the viewport so it fills the screen like a real room.
+    const boardW = GRID_SIZE * TILE_H * 2; // diamond width ≈ GRID*TILE_W
+    const boardH = GRID_SIZE * TILE_H + 150; // floor depth + wall/character height
+    const zoom = Phaser.Math.Clamp(
+      Math.min((cam.width * 0.86) / boardW, (cam.height * 0.86) / boardH),
+      0.55,
+      2.0,
+    );
     cam.setZoom(zoom);
-    cam.centerOn(center.x, center.y - 10);
+    cam.centerOn(center.x, center.y - 6);
   }
 
   private drawWallsAndFurniture(): void {
