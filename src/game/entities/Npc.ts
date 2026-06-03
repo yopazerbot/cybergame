@@ -150,6 +150,24 @@ export class Npc extends Phaser.GameObjects.Container {
     if (on) this.ring.setAlpha(0.75);
   }
 
+  /** Pop a small speech bubble above the NPC (e.g. when you start talking). */
+  emote(symbol = '💬'): void {
+    const bubble = this.scene.add
+      .text(0, -150, symbol, { fontFamily: 'Baloo 2, sans-serif', fontSize: '22px' })
+      .setOrigin(0.5)
+      .setScale(0);
+    this.add(bubble);
+    this.scene.tweens.add({ targets: bubble, scale: 1, duration: 170, ease: 'Back.out' });
+    this.scene.tweens.add({
+      targets: bubble,
+      alpha: 0,
+      y: -172,
+      delay: 650,
+      duration: 320,
+      onComplete: () => bubble.destroy(),
+    });
+  }
+
   // Kill tweens targeting our children before teardown (mode switch rebuilds NPCs),
   // otherwise the tween manager keeps ticking destroyed objects and throws.
   destroy(fromScene?: boolean): void {

@@ -12,6 +12,7 @@ import {
   TEX_RUG,
   TEX_SHADOW,
   TEX_GLOW,
+  TEX_SCAN,
 } from '../TextureFactory';
 import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
@@ -19,7 +20,7 @@ import { sfx } from '../../core/sfx';
 import { STAKEHOLDERS, STAKEHOLDER_BY_ID } from '../../scenario/stakeholders';
 import { campaignStakeholders, campaignPhaseOrder } from '../../scenario/campaign';
 import { nodeForStakeholder, stakeholderHasPending } from '../../scenario/scoring';
-import type { Mode } from '../../core/types';
+import type { Mode, GamePhase } from '../../core/types';
 import { advanceClock } from '../../scenario/scoring';
 import type { Role } from '../../core/types';
 
@@ -100,8 +101,10 @@ export class OfficeScene extends Phaser.Scene {
   private pinchDist = 0;
   private pinching = false;
   private builtMode: Mode = 'defender';
+  private lastPhase: GamePhase = 'start';
   private darkOverlay?: Phaser.GameObjects.Rectangle;
   private glow?: Phaser.GameObjects.Image;
+  private scanlines?: Phaser.GameObjects.TileSprite;
   private toWorld = (gx: number, gy: number) => {
     const w = gridToWorld(gx, gy);
     return { x: w.x, y: w.y };
@@ -339,6 +342,9 @@ export class OfficeScene extends Phaser.Scene {
       addArt(this, x, y, TEX_SHADOW).setOrigin(0.5, 0.5).setDepth(isoDepth(f.gx, f.gy, 0));
       this.placeBox(f.gx, f.gy, f.key);
       if (f.key === 'server') this.addServerLeds(f.gx, f.gy);
+      else if (f.key === 'cooler') this.addCoolerBubbles(f.gx, f.gy);
+      else if (f.key === 'desk' || f.key === 'reception_desk') this.addMonitorGlow(f.gx, f.gy);
+      else if (f.key === 'printer') this.addPrinterBlink(f.gx, f.gy);
     }
   }
 
@@ -374,6 +380,52 @@ export class OfficeScene extends Phaser.Scene {
         delay: i * 200,
       });
     }
+  }
+
+  private addCoolerBubbles(gx: number, gy: number): void {
+    const { x, y } = this.toWorld(gx, gy);
+    const top = y - 22;
+    for (let i = 0; i < 2; i++) {
+      const b = this.add.circle(x - 2 + i * 4, top, 1.3, 0xbfe3f5, 0.9).setDepth(isoDepth(gx, gy, 2));
+      this.tweens.add({
+        targets: b,
+        y: { from: top, to: top - 9 },
+        alpha: { from: 0.9, to: 0 },
+        duration: 1200,
+        repeat: -1,
+        delay: i * 500,
+        ease: 'Sine.in',
+      });
+    }
+  }
+
+  private addMonitorGlow(gx: number, gy: number): void {
+    const { x, y } = this.toWorld(gx, gy);
+    const scr = this.add
+      .rectangle(x, y - 14, 11, 6, 0x5fd0c4)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(isoDepth(gx, gy, 2));
+    this.tweens.add({
+      targets: scr,
+      alpha: { from: 0.08, to: 0.34 },
+      duration: 900,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+    });
+  }
+
+  private addPrinterBlink(gx: number, gy: number): void {
+    const { x, y } = this.toWorld(gx, gy);
+    const led = this.add.circle(x + 8, y - 15, 1.3, 0x59f08a).setDepth(isoDepth(gx, gy, 2));
+    this.tweens.add({
+      targets: led,
+      alpha: { from: 0.3, to: 1 },
+      duration: 1400,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+    });
   }
 
   /** A one-shot expanding ring where the player tapped to move. */
@@ -416,6 +468,13 @@ export class OfficeScene extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.MULTIPLY)
       .setDepth(9998)
       .setVisible(false);
+
+    // CRT scanlines for the attacker "hacked" feel (toggled in applyTheme).
+    this.scanlines = this.add
+      .tileSprite(center.x, center.y, big, big, TEX_SCAN)
+      .setDepth(9997)
+      .setAlpha(0)
+      .setVisible(false);
   }
 
   // Timer-driven mood (defender): the room glow warms → reddens as the 72h nears.
@@ -441,6 +500,7 @@ export class OfficeScene extends Phaser.Scene {
     const attacker = mode === 'attacker';
     this.cameras.main.setBackgroundColor(attacker ? '#0b0717' : '#aab4d2');
     this.darkOverlay?.setVisible(attacker);
+    this.scanlines?.setVisible(attacker).setAlpha(attacker ? 0.12 : 0);
     this.glow?.setTint(attacker ? 0xff3b6b : 0xffe9c2).setAlpha(attacker ? 0.14 : 0.09);
     // Toggle the page chrome theme (HUD/panels) via a root class.
     if (typeof document !== 'undefined') {
@@ -455,6 +515,7 @@ export class OfficeScene extends Phaser.Scene {
     this.npcs = campaignStakeholders(mode).map((s) => new Npc(this, s, this.toWorld));
     this.builtMode = mode;
     this.applyTheme(mode);
+    this.cameras.main.fadeIn(260);
     this.refreshPendingIndicators();
   }
 
@@ -669,6 +730,7 @@ export class OfficeScene extends Phaser.Scene {
     const state = store.getState();
     if (state.activeDialogue) return;
     sfx.talk();
+    this.npcs.find((n) => n.info.id === npcId)?.emote('💬');
     store.setState({ ...state, activeDialogue: { npcId } });
   }
 
@@ -676,7 +738,10 @@ export class OfficeScene extends Phaser.Scene {
     const state = store.getState();
     if (state.gamePhase === 'playing' && state.mode !== this.builtMode) {
       this.rebuildForMode(state.mode);
+    } else if (state.gamePhase === 'playing' && this.lastPhase !== 'playing') {
+      this.cameras.main.fadeIn(260);
     }
+    this.lastPhase = state.gamePhase;
     this.refreshPendingIndicators();
     if (state.gamePhase === 'start') this.resetWorld();
   }

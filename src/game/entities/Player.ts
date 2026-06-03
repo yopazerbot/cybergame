@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CHAR_PLAYER, TEX_RING } from '../TextureFactory';
+import { CHAR_PLAYER, TEX_RING, TEX_SHADOW } from '../TextureFactory';
 import { ART_INV } from '../../core/config';
 import { isoDepth } from '../iso';
 
@@ -115,6 +115,7 @@ export class Player extends Phaser.GameObjects.Container {
         ease: 'Linear',
         onStart: () => {
           this.avatar.setFlipX(x < this.x);
+          this.puff();
           this.gx = step.gx;
           this.gy = step.gy;
           this.setDepth(isoDepth(step.gx, step.gy, 5));
@@ -130,6 +131,23 @@ export class Player extends Phaser.GameObjects.Container {
         this.stopWalk();
         onArrive();
       },
+    });
+  }
+
+  /** A small dust puff at the feet on each step. */
+  private puff(): void {
+    const p = this.scene.add
+      .image(this.x, this.y, TEX_SHADOW)
+      .setScale(ART_INV * 0.45)
+      .setAlpha(0.5)
+      .setDepth(this.depth - 1);
+    this.scene.tweens.add({
+      targets: p,
+      scaleX: ART_INV * 0.9,
+      scaleY: ART_INV * 0.9,
+      alpha: 0,
+      duration: 340,
+      onComplete: () => p.destroy(),
     });
   }
 }

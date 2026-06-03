@@ -283,6 +283,15 @@ function makeLight(scene: Phaser.Scene, key: string): void {
   g.destroy();
 }
 
+/** A tiny tileable scanline (one dark line per 3px) for the attacker CRT overlay. */
+function makeScanlines(scene: Phaser.Scene, key: string): void {
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+  g.fillStyle(0x000000, 0.5);
+  g.fillRect(0, 0, 3, 1);
+  g.generateTexture(key, 3, 3);
+  g.destroy();
+}
+
 /** Soft contact shadow blob for furniture. */
 function makeShadow(scene: Phaser.Scene, key: string): void {
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
@@ -299,6 +308,7 @@ export const TEX_RING = 'ring';
 export const TEX_TILE_HI = 'tile_hi';
 export const TEX_SHADOW = 'shadow';
 export const TEX_GLOW = 'glow';
+export const TEX_SCAN = 'scanlines';
 
 export function generateTextures(scene: Phaser.Scene): void {
   makeFloor(scene, 'floor_a', FLOOR_A);
@@ -309,6 +319,7 @@ export function generateTextures(scene: Phaser.Scene): void {
   makeTileHighlight(scene, TEX_TILE_HI);
   makeShadow(scene, TEX_SHADOW);
   makeLight(scene, TEX_GLOW);
+  makeScanlines(scene, TEX_SCAN);
 
   // Habbo-style wall: tall, with a bright top trim and a darker skirting band.
   makeBox(scene, 'wall', 54, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g, h) => {
