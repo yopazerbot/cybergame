@@ -22,7 +22,7 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: radial-gradient(circle at 50% 30%, #c3cde6 0%, #9fa9c8 55%, #8a93b4 100%);
+  background: radial-gradient(circle at 50% 28%, #cdd6ec 0%, #aab4d2 55%, #949ec0 100%);
   color: var(--ink);
 }
 #game-root,
@@ -39,7 +39,7 @@ body::after {
   inset: 0;
   z-index: 5;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 44%, transparent 42%, rgba(18, 26, 48, 0.3) 100%);
+  background: radial-gradient(ellipse at 50% 46%, transparent 52%, rgba(18, 26, 48, 0.22) 100%);
 }
 #ui-root {
   position: fixed;

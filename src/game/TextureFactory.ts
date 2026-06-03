@@ -40,7 +40,7 @@ function makeFloor(scene: Phaser.Scene, key: string, fill: number, edge = FLOOR_
   g.fillStyle(fill, 1);
   g.fillPoints(diamondPoints(), true);
   // Subtle top-left highlight wedge for a soft-lit look.
-  g.fillStyle(FLOOR_HI, 0.25);
+  g.fillStyle(FLOOR_HI, 0.18);
   g.fillPoints(
     [
       { x: TILE_W / 2, y: 0 },
@@ -49,6 +49,10 @@ function makeFloor(scene: Phaser.Scene, key: string, fill: number, edge = FLOOR_
     ],
     true,
   );
+  // Inset bevel: a lighter inner ring just inside the grout line.
+  g.lineStyle(1, FLOOR_HI, 0.35);
+  g.strokePoints(diamondPoints(2, 1.5, 0.94, 0.94), true);
+  // Grout edge.
   g.lineStyle(1, edge, 0.9);
   g.strokePoints(diamondPoints(), true);
   g.setScale(ART_SCALE);
@@ -123,8 +127,39 @@ function makeBox(
   g.destroy();
 }
 
+/** A point on a wall side face, parameterised by u (0..1 across) and v (px down). */
+function facePt(face: 'left' | 'right', u: number, v: number): Phaser.Types.Math.Vector2Like {
+  return face === 'left'
+    ? { x: (u * TILE_W) / 2, y: TILE_H / 2 + (u * TILE_H) / 2 + v }
+    : { x: TILE_W - (u * TILE_W) / 2, y: TILE_H / 2 + (u * TILE_H) / 2 + v };
+}
+
+/** Fill a rectangular patch aligned to a wall side face. */
+function facePatch(
+  g: Phaser.GameObjects.Graphics,
+  face: 'left' | 'right',
+  u0: number,
+  u1: number,
+  v0: number,
+  v1: number,
+  color: number,
+  alpha = 1,
+): void {
+  g.fillStyle(color, alpha);
+  g.fillPoints(
+    [facePt(face, u0, v0), facePt(face, u1, v0), facePt(face, u1, v1), facePt(face, u0, v1)],
+    true,
+  );
+}
+
 /** A taller, Habbo-style avatar: dark outline, big head, shaded torso, legs + shoes, face. */
-function makeCharacter(scene: Phaser.Scene, key: string, body: number, accent: number): void {
+function makeCharacter(
+  scene: Phaser.Scene,
+  key: string,
+  body: number,
+  accent: number,
+  role = '',
+): void {
   const w = 58;
   const h = 96;
   const cx = w / 2;
@@ -141,7 +176,7 @@ function makeCharacter(scene: Phaser.Scene, key: string, body: number, accent: n
   g.fillEllipse(cx, h - 4, 40, 13);
 
   // Trousers + legs.
-  g.lineStyle(2, OUT, 0.5);
+  g.lineStyle(2, OUT, 0.85);
   g.fillStyle(0x3a4157, 1);
   g.fillRoundedRect(cx - 12, 58, 11, 20, 4);
   g.fillRoundedRect(cx + 1, 58, 11, 20, 4);
@@ -154,7 +189,7 @@ function makeCharacter(scene: Phaser.Scene, key: string, body: number, accent: n
 
   // Arms.
   g.fillStyle(dark, 1);
-  g.lineStyle(2, OUT, 0.45);
+  g.lineStyle(2, OUT, 0.8);
   g.fillRoundedRect(cx - 21, 33, 9, 26, 4);
   g.fillRoundedRect(cx + 12, 33, 9, 26, 4);
   g.strokeRoundedRect(cx - 21, 33, 9, 26, 4);
@@ -176,7 +211,7 @@ function makeCharacter(scene: Phaser.Scene, key: string, body: number, accent: n
   g.fillStyle(skin, 1);
   g.fillTriangle(cx - 3, 31, cx + 3, 31, cx, 37);
   // Torso outline.
-  g.lineStyle(2, OUT, 0.5);
+  g.lineStyle(2, OUT, 0.85);
   g.strokeRoundedRect(cx - 17, 30, 34, 34, 13);
 
   // Head.
@@ -184,7 +219,7 @@ function makeCharacter(scene: Phaser.Scene, key: string, body: number, accent: n
   g.fillCircle(cx, 18, 14);
   g.fillStyle(skinDk, 0.5);
   g.fillEllipse(cx + 5, 22, 14, 16);
-  g.lineStyle(2, OUT, 0.5);
+  g.lineStyle(2, OUT, 0.85);
   g.strokeCircle(cx, 18, 14);
   // Ears.
   g.fillStyle(skin, 1);
@@ -208,8 +243,43 @@ function makeCharacter(scene: Phaser.Scene, key: string, body: number, accent: n
   g.arc(cx, 21, 4.5, 0.18 * Math.PI, 0.82 * Math.PI, false);
   g.strokePath();
 
+  // Small per-role accents so stakeholders are recognisable.
+  if (role === 'management') {
+    g.fillStyle(0xc0392b, 1); // tie
+    g.fillTriangle(cx - 2.5, 37, cx + 2.5, 37, cx, 41);
+    g.fillRect(cx - 1.6, 40, 3.2, 14);
+  } else if (role === 'dpo') {
+    g.lineStyle(1.6, 0x2a2f44, 1); // glasses
+    g.strokeCircle(cx - 5, 19, 3.2);
+    g.strokeCircle(cx + 5, 19, 3.2);
+    g.lineBetween(cx - 1.8, 19, cx + 1.8, 19);
+  } else if (role === 'tech') {
+    g.lineStyle(2.2, 0x2a2f44, 1); // headset band
+    g.beginPath();
+    g.arc(cx, 14, 15, 1.05 * Math.PI, 1.95 * Math.PI, false);
+    g.strokePath();
+    g.fillStyle(0x2a2f44, 1);
+    g.fillCircle(cx - 14, 19, 2.6);
+    g.fillRect(cx - 14, 19, 7, 1.6); // mic boom
+  }
+
   g.setScale(ART_SCALE);
   g.generateTexture(key, w * ART_SCALE, h * ART_SCALE);
+  g.destroy();
+}
+
+/** Soft radial glow for a warm room light (displayed with ADD blend). */
+function makeLight(scene: Phaser.Scene, key: string): void {
+  const W = 360;
+  const H = 240;
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+  const steps = 22;
+  for (let i = steps; i > 0; i--) {
+    const t = i / steps;
+    g.fillStyle(0xffffff, 0.045);
+    g.fillEllipse(W / 2, H / 2, W * t, H * t);
+  }
+  g.generateTexture(key, W, H);
   g.destroy();
 }
 
@@ -228,6 +298,7 @@ export const TEX_RUG = 'rug';
 export const TEX_RING = 'ring';
 export const TEX_TILE_HI = 'tile_hi';
 export const TEX_SHADOW = 'shadow';
+export const TEX_GLOW = 'glow';
 
 export function generateTextures(scene: Phaser.Scene): void {
   makeFloor(scene, 'floor_a', FLOOR_A);
@@ -237,6 +308,7 @@ export function generateTextures(scene: Phaser.Scene): void {
   makeDiamond(scene, TEX_RING, true);
   makeTileHighlight(scene, TEX_TILE_HI);
   makeShadow(scene, TEX_SHADOW);
+  makeLight(scene, TEX_GLOW);
 
   // Habbo-style wall: tall, with a bright top trim and a darker skirting band.
   makeBox(scene, 'wall', 54, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g, h) => {
@@ -266,6 +338,38 @@ export function generateTextures(scene: Phaser.Scene): void {
       true,
     );
   });
+  // Window wall: a big sky pane with mullions on each visible face.
+  makeBox(scene, 'wall_window', 54, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g) => {
+    for (const face of ['left', 'right'] as const) {
+      facePatch(g, face, 0.16, 0.84, 12, 40, 0x2a3550, 1); // frame
+      facePatch(g, face, 0.22, 0.78, 15, 37, WALL_WINDOW, 1); // pane
+      facePatch(g, face, 0.22, 0.5, 15, 26, 0xffffff, 0.28); // sky sheen
+      facePatch(g, face, 0.49, 0.51, 15, 37, 0x2a3550, 1); // vertical mullion
+      facePatch(g, face, 0.22, 0.78, 25, 26.6, 0x2a3550, 1); // horizontal mullion
+    }
+  });
+  // Picture wall: a framed abstract on each face.
+  makeBox(scene, 'wall_picture', 54, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g) => {
+    for (const face of ['left', 'right'] as const) {
+      facePatch(g, face, 0.28, 0.72, 14, 34, 0x6b4f33, 1); // frame
+      facePatch(g, face, 0.32, 0.68, 16, 32, 0xf3eede, 1); // mat
+      facePatch(g, face, 0.36, 0.64, 18, 26, 0x4a90c2, 1);
+      facePatch(g, face, 0.36, 0.5, 26, 30, 0x84b86a, 1);
+    }
+  });
+  // Clock wall: a round clock high on each face.
+  makeBox(scene, 'wall_clock', 54, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g) => {
+    for (const face of ['left', 'right'] as const) {
+      const c = facePt(face, 0.5, 22);
+      g.fillStyle(0xf7f9ff, 1);
+      g.fillCircle(c.x as number, c.y as number, 7);
+      g.lineStyle(1.4, 0x2a3550, 1);
+      g.strokeCircle(c.x as number, c.y as number, 7);
+      g.lineStyle(1.4, 0x2a3550, 1);
+      g.lineBetween(c.x as number, c.y as number, c.x as number, (c.y as number) - 4);
+      g.lineBetween(c.x as number, c.y as number, (c.x as number) + 3.5, c.y as number);
+    }
+  });
   // Low interior partition (half-height) so the camera sees over it into back rooms.
   makeBox(scene, 'wall_low', 24, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g, h) => {
     const band = (left: boolean, off: number, depth: number) =>
@@ -291,31 +395,51 @@ export function generateTextures(scene: Phaser.Scene): void {
     g.fillPoints(band(true, h - 6, 6), true);
     g.fillPoints(band(false, h - 6, 6), true);
   });
-  // Desk with a monitor.
+  // Desk with dual monitors, a keyboard and a mug.
   makeBox(scene, 'desk', 16, 0x9a7a5b, 0x7a5f47, 0x624c39, (g) => {
+    const cx = TILE_W / 2;
+    // Two monitors.
     g.fillStyle(0x2b3242, 1);
-    g.fillRoundedRect(TILE_W / 2 - 7, 2, 14, 9, 2);
+    g.fillRoundedRect(cx - 12, 1, 11, 9, 2);
+    g.fillRoundedRect(cx + 1, 1, 11, 9, 2);
     g.fillStyle(0x5fd0c4, 1);
-    g.fillRect(TILE_W / 2 - 5, 4, 10, 5);
+    g.fillRect(cx - 10, 3, 7, 5);
+    g.fillStyle(0x8fb3ff, 1);
+    g.fillRect(cx + 3, 3, 7, 5);
+    // Keyboard.
+    g.fillStyle(0x3a4255, 1);
+    g.fillRoundedRect(cx - 7, 11, 14, 4, 1.5);
+    // Mug.
+    g.fillStyle(0xe06a55, 1);
+    g.fillCircle(cx + 12, 13, 2.4);
   });
-  // Server rack with blinking lights.
+  // Server rack with stacked status LEDs.
   makeBox(scene, 'server', 30, 0x3c4a60, 0x2c3748, 0x202836, (g) => {
-    g.fillStyle(0x59f08a, 1);
-    g.fillCircle(TILE_W / 2 - 6, 8, 1.6);
-    g.fillStyle(0xffd45e, 1);
-    g.fillCircle(TILE_W / 2, 8, 1.6);
-    g.fillStyle(0x59f08a, 1);
-    g.fillCircle(TILE_W / 2 + 6, 8, 1.6);
+    const cx = TILE_W / 2;
+    const leds = [0x59f08a, 0xffd45e, 0x59f08a, 0x4ab6ff, 0x59f08a];
+    for (let r = 0; r < leds.length; r++) {
+      g.fillStyle(leds[r], 1);
+      g.fillCircle(cx - 7, 5 + r * 4, 1.5);
+      g.fillStyle(0x59f08a, r % 2 ? 1 : 0.4);
+      g.fillCircle(cx + 7, 5 + r * 4, 1.5);
+    }
+    // Vent slot.
+    g.fillStyle(0x161d2a, 0.8);
+    g.fillRoundedRect(cx - 3, 4, 6, 18, 1.5);
   });
-  // Plant.
+  // Leafy plant.
   makeBox(scene, 'plant', 14, 0x8d6e52, 0x6f553f, 0x5a4532, (g) => {
-    g.fillStyle(0x4caf78, 1);
-    g.fillCircle(TILE_W / 2, -2, 11);
+    const cx = TILE_W / 2;
     g.fillStyle(0x3a8a5f, 1);
-    g.fillCircle(TILE_W / 2 - 5, 1, 7);
-    g.fillCircle(TILE_W / 2 + 5, 0, 6);
+    g.fillCircle(cx - 6, 1, 8);
+    g.fillCircle(cx + 6, 1, 7);
+    g.fillStyle(0x4caf78, 1);
+    g.fillCircle(cx, -3, 11);
+    g.fillCircle(cx - 7, -2, 6);
+    g.fillCircle(cx + 7, -2, 6);
     g.fillStyle(0x6fd49b, 1);
-    g.fillCircle(TILE_W / 2 - 2, -5, 5);
+    g.fillCircle(cx - 3, -7, 5);
+    g.fillCircle(cx + 4, -6, 4);
   });
   // Filing cabinet with drawer handles.
   makeBox(scene, 'cabinet', 30, 0xb9c2d4, 0x95a0b8, 0x7c889f, (g, h) => {
@@ -335,6 +459,6 @@ export function generateTextures(scene: Phaser.Scene): void {
 
   makeCharacter(scene, CHAR_PLAYER, 0x2d6cdf, 0x163a82);
   for (const s of STAKEHOLDERS) {
-    makeCharacter(scene, `char_${s.id}`, s.colors.body, s.colors.accent);
+    makeCharacter(scene, `char_${s.id}`, s.colors.body, s.colors.accent, s.id);
   }
 }

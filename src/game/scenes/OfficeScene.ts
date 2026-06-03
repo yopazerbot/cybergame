@@ -4,7 +4,7 @@ import { gridToWorld, worldToGrid, isoDepth } from '../iso';
 import { findPath } from '../pathfinding';
 import { Player } from '../entities/Player';
 import { Npc } from '../entities/Npc';
-import { addArt, TEX_RING, TEX_TILE_HI, TEX_RUG, TEX_SHADOW } from '../TextureFactory';
+import { addArt, TEX_RING, TEX_TILE_HI, TEX_RUG, TEX_SHADOW, TEX_GLOW } from '../TextureFactory';
 import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
 import { sfx } from '../../core/sfx';
@@ -85,6 +85,7 @@ export class OfficeScene extends Phaser.Scene {
     this.drawFloor();
     this.drawStationRugs();
     this.drawWallsAndFurniture();
+    this.addRoomLight();
     this.createMarker();
 
     // NPCs.
@@ -203,10 +204,17 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private drawWallsAndFurniture(): void {
-    // Back walls along gx=0 and gy=0.
+    // Back walls along gx=0 and gy=0, with a little Habbo-style variety.
+    const decor: Record<number, string> = {
+      2: 'wall_window',
+      3: 'wall_window',
+      5: 'wall_picture',
+      8: 'wall_clock',
+      9: 'wall_window',
+    };
     for (let i = 0; i < GRID_SIZE; i++) {
-      this.placeBox(0, i, 'wall');
-      this.placeBox(i, 0, 'wall');
+      this.placeBox(0, i, decor[i] ?? 'wall');
+      this.placeBox(i, 0, decor[i] ?? 'wall');
     }
     // Interior partitions dividing the rooms (half-height so back rooms stay visible).
     for (const key of INTERIOR_WALLS) {
@@ -226,6 +234,18 @@ export class OfficeScene extends Phaser.Scene {
     addArt(this, x, y + TILE_H / 2, key)
       .setOrigin(0.5, 1)
       .setDepth(isoDepth(gx, gy, 1));
+  }
+
+  /** A soft warm glow over the room for a cosy, lit feel (additive, very low alpha). */
+  private addRoomLight(): void {
+    const center = this.toWorld((GRID_SIZE - 1) / 2, (GRID_SIZE - 1) / 2);
+    this.add
+      .image(center.x, center.y - 10, TEX_GLOW)
+      .setTint(0xffe9c2)
+      .setAlpha(0.09)
+      .setScale(2.4)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(9999);
   }
 
   private createMarker(): void {
