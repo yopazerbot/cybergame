@@ -468,6 +468,29 @@ export class OfficeScene extends Phaser.Scene {
     });
   }
 
+  /** A small burst of sparks at a tapped destination, for a bit of juice. */
+  private spawnSparkle(x: number, y: number): void {
+    const n = 6;
+    for (let i = 0; i < n; i++) {
+      const ang = (Math.PI * 2 * i) / n + Math.random() * 0.5;
+      const dist = Phaser.Math.Between(10, 22);
+      const s = this.add
+        .circle(x, y, Phaser.Math.FloatBetween(1.4, 2.4), 0xbfe6ff)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(9991);
+      this.tweens.add({
+        targets: s,
+        x: x + Math.cos(ang) * dist,
+        y: y + Math.sin(ang) * dist * 0.6, // flatten to the iso ground plane
+        alpha: 0,
+        scale: 0,
+        duration: Phaser.Math.Between(360, 520),
+        ease: 'Cubic.out',
+        onComplete: () => s.destroy(),
+      });
+    }
+  }
+
   private placeBox(gx: number, gy: number, key: string): void {
     const { x, y } = this.toWorld(gx, gy);
     // Origin (0.5,1) at the tile's bottom vertex makes the footprint overlay the floor tile.
@@ -723,6 +746,7 @@ export class OfficeScene extends Phaser.Scene {
     const target = this.toWorld(gx, gy);
     this.marker.setPosition(target.x, target.y).setDepth(isoDepth(gx, gy, 0)).setVisible(true);
     this.spawnRipple(target.x, target.y);
+    this.spawnSparkle(target.x, target.y);
     this.hover.setVisible(false);
     sfx.walk();
 
