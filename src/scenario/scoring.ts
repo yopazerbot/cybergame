@@ -348,7 +348,11 @@ export function advanceClock(hours: number): void {
   const clock = { ...state.clock, hoursElapsed: state.clock.hoursElapsed + hours };
   // The live intrusion sim is the defender's containment minigame only.
   let next: GameState = isDefender
-    ? applyNetworkTransitions(state, { ...state, clock, network: tickNetwork(state.network, hours) })
+    ? applyNetworkTransitions(state, {
+        ...state,
+        clock,
+        network: tickNetwork(state.network, hours, DIFFICULTY[state.difficulty].threat),
+      })
     : { ...state, clock };
   next = { ...next, score: computeScore(next) };
 

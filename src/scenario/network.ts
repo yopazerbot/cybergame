@@ -74,10 +74,14 @@ function neighbours(net: NetworkState, id: string): string[] {
 }
 
 /** Advance the spread + exfiltration by `dtHours`. Pure. */
-export function tickNetwork(net: NetworkState, dtHours: number): NetworkState {
+/**
+ * Advance the intrusion by `dtHours`. `speed` (difficulty) scales how fast the
+ * attacker spreads and exfiltrates — higher = harder.
+ */
+export function tickNetwork(net: NetworkState, dtHours: number, speed = 1): NetworkState {
   const hosts: Record<string, Host> = {};
   for (const id of Object.keys(net.hosts)) hosts[id] = { ...net.hosts[id] };
-  const interval = net.credsRotated ? SPREAD_INTERVAL_ROTATED_H : SPREAD_INTERVAL_H;
+  const interval = (net.credsRotated ? SPREAD_INTERVAL_ROTATED_H : SPREAD_INTERVAL_H) / speed;
 
   for (const id of Object.keys(hosts)) {
     const h = hosts[id];
@@ -94,7 +98,7 @@ export function tickNetwork(net: NetworkState, dtHours: number): NetworkState {
 
   let exfilPct = net.exfilPct;
   if (hosts.db.status === 'compromised' && !net.c2Blocked) {
-    exfilPct = Math.min(100, exfilPct + EXFIL_RATE_PER_H * dtHours);
+    exfilPct = Math.min(100, exfilPct + EXFIL_RATE_PER_H * dtHours * speed);
   }
 
   return { ...net, hosts, exfilPct };

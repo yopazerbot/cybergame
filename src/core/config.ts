@@ -27,9 +27,9 @@ export const DEADLINE_HOURS = 72;
  * the scenario starts (the meters) and how many crisis injects can fire.
  */
 export const DIFFICULTY = {
-  easy: { label: 'Easy', maxInjects: 1, reputation: 75, compliance: 66, cost: 8 },
-  normal: { label: 'Normal', maxInjects: 3, reputation: 70, compliance: 60, cost: 10 },
-  hard: { label: 'Hard', maxInjects: 5, reputation: 62, compliance: 52, cost: 14 },
+  easy: { label: 'Easy', maxInjects: 1, threat: 0.7, reputation: 75, compliance: 66, cost: 8 },
+  normal: { label: 'Normal', maxInjects: 3, threat: 1.0, reputation: 70, compliance: 60, cost: 10 },
+  hard: { label: 'Hard', maxInjects: 5, threat: 1.45, reputation: 62, compliance: 52, cost: 14 },
 } as const;
 
 /**
