@@ -121,6 +121,7 @@ export class OfficeScene extends Phaser.Scene {
     this.drawStationRugs();
     this.drawWallsAndFurniture();
     this.addRoomLight();
+    this.addAmbientMotes();
     this.createMarker();
 
     // NPCs (personas depend on the campaign mode).
@@ -449,6 +450,38 @@ export class OfficeScene extends Phaser.Scene {
       .setDepth(isoDepth(gx, gy, 1));
   }
 
+  /** Slow-drifting dust motes for atmosphere (great for showcase screenshots). */
+  private addAmbientMotes(): void {
+    const corners = [
+      this.toWorld(0, 0),
+      this.toWorld(GRID_SIZE - 1, 0),
+      this.toWorld(0, GRID_SIZE - 1),
+      this.toWorld(GRID_SIZE - 1, GRID_SIZE - 1),
+    ];
+    const minX = Math.min(...corners.map((c) => c.x));
+    const maxX = Math.max(...corners.map((c) => c.x));
+    const minY = Math.min(...corners.map((c) => c.y));
+    const maxY = Math.max(...corners.map((c) => c.y));
+    for (let i = 0; i < 16; i++) {
+      const x = Phaser.Math.Between(minX, maxX);
+      const y = Phaser.Math.Between(minY, maxY);
+      const m = this.add
+        .circle(x, y, Phaser.Math.FloatBetween(0.8, 1.6), 0xffffff, Phaser.Math.FloatBetween(0.1, 0.25))
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(9995);
+      this.tweens.add({
+        targets: m,
+        y: y - Phaser.Math.Between(30, 70),
+        x: x + Phaser.Math.Between(-22, 22),
+        alpha: 0,
+        duration: Phaser.Math.Between(4500, 8500),
+        delay: Phaser.Math.Between(0, 4000),
+        repeat: -1,
+        ease: 'Sine.inOut',
+      });
+    }
+  }
+
   /** A soft warm glow over the room for a cosy, lit feel (additive, very low alpha). */
   private addRoomLight(): void {
     const center = this.toWorld((GRID_SIZE - 1) / 2, (GRID_SIZE - 1) / 2);
@@ -524,6 +557,14 @@ export class OfficeScene extends Phaser.Scene {
       .setOrigin(0.5, 0.5)
       .setVisible(false)
       .setAlpha(0.9);
+    this.tweens.add({
+      targets: this.hover,
+      alpha: { from: 0.55, to: 0.95 },
+      duration: 700,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+    });
     this.marker = addArt(this, 0, 0, TEX_RING)
       .setOrigin(0.5, 0.5)
       .setTint(0x2d6cdf)

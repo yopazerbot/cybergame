@@ -159,6 +159,7 @@ function makeCharacter(
   body: number,
   accent: number,
   role = '',
+  back = false,
 ): void {
   const w = 58;
   const h = 96;
@@ -233,6 +234,26 @@ function makeCharacter(
   g.fillCircle(cx - 10, 6, 4.5);
   g.fillCircle(cx, 4, 5.5);
   g.fillCircle(cx + 10, 6, 4.5);
+  if (back) {
+    // Back of the head: hair covers the face; just a centre part.
+    g.fillStyle(accent, 1);
+    g.fillCircle(cx, 17, 14);
+    g.fillStyle(hairDark, 1);
+    g.fillRect(cx - 1, 5, 2, 12);
+    g.lineStyle(2, OUT, 0.85);
+    g.strokeCircle(cx, 17, 14);
+    if (role === 'tech') {
+      g.lineStyle(2.2, 0x2a2f44, 1); // headset band still reads from behind
+      g.beginPath();
+      g.arc(cx, 14, 15, 1.05 * Math.PI, 1.95 * Math.PI, false);
+      g.strokePath();
+    }
+    g.setScale(ART_SCALE);
+    g.generateTexture(key, w * ART_SCALE, h * ART_SCALE);
+    g.destroy();
+    return;
+  }
+
   // Eyes + brows.
   g.fillStyle(0x2a2f44, 1);
   g.fillCircle(cx - 5, 19, 2);
@@ -303,6 +324,7 @@ function makeShadow(scene: Phaser.Scene, key: string): void {
 }
 
 export const CHAR_PLAYER = 'char_player';
+export const CHAR_PLAYER_BACK = 'char_player_back';
 export const TEX_RUG = 'rug';
 export const TEX_RING = 'ring';
 export const TEX_TILE_HI = 'tile_hi';
@@ -537,6 +559,7 @@ export function generateTextures(scene: Phaser.Scene): void {
   makeBox(scene, 'boardroom_table_r', 16, 0x8a6a48, 0x6e5238, 0x57402b, tableDecor);
 
   makeCharacter(scene, CHAR_PLAYER, 0x2d6cdf, 0x163a82);
+  makeCharacter(scene, CHAR_PLAYER_BACK, 0x2d6cdf, 0x163a82, '', true);
   generateCharacters(scene, STAKEHOLDERS);
 }
 

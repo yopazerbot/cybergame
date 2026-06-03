@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CHAR_PLAYER, TEX_RING, TEX_SHADOW } from '../TextureFactory';
+import { CHAR_PLAYER, CHAR_PLAYER_BACK, TEX_RING, TEX_SHADOW } from '../TextureFactory';
 import { ART_INV } from '../../core/config';
 import { isoDepth } from '../iso';
 
@@ -95,7 +95,7 @@ export class Player extends Phaser.GameObjects.Container {
 
   private stopWalk(): void {
     this.bob.pause();
-    this.avatar.setY(0).setScale(ART_INV, ART_INV);
+    this.avatar.setTexture(CHAR_PLAYER).setY(0).setScale(ART_INV, ART_INV);
   }
 
   moveAlongPath(path: { gx: number; gy: number }[], onArrive: () => void): void {
@@ -114,6 +114,8 @@ export class Player extends Phaser.GameObjects.Container {
         duration: 230,
         ease: 'Linear',
         onStart: () => {
+          // Face away when walking up-screen, toward the camera when walking down.
+          this.avatar.setTexture(y < this.y ? CHAR_PLAYER_BACK : CHAR_PLAYER);
           this.avatar.setFlipX(x < this.x);
           this.puff();
           this.gx = step.gx;
