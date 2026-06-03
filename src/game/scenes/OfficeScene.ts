@@ -267,6 +267,11 @@ export class OfficeScene extends Phaser.Scene {
     for (let i = 0; i < GRID_SIZE; i++) {
       this.placeBox(0, i, decor[i] ?? 'wall');
       this.placeBox(i, 0, decor[i] ?? 'wall');
+      // Soft daylight pooling on the floor in front of each window.
+      if (decor[i] === 'wall_window') {
+        this.windowLight(1, i);
+        this.windowLight(i, 1);
+      }
     }
     // Interior partitions dividing the rooms (half-height so back rooms stay visible).
     for (const key of INTERIOR_WALLS) {
@@ -277,7 +282,55 @@ export class OfficeScene extends Phaser.Scene {
       const { x, y } = this.toWorld(f.gx, f.gy);
       addArt(this, x, y, TEX_SHADOW).setOrigin(0.5, 0.5).setDepth(isoDepth(f.gx, f.gy, 0));
       this.placeBox(f.gx, f.gy, f.key);
+      if (f.key === 'server') this.addServerLeds(f.gx, f.gy);
     }
+  }
+
+  /** A soft additive pool of window light on a floor tile (godray landing spot). */
+  private windowLight(gx: number, gy: number): void {
+    if (this.isWall(gx, gy)) return;
+    const { x, y } = this.toWorld(gx, gy);
+    this.add
+      .image(x, y, TEX_GLOW)
+      .setTint(0xcfeaff)
+      .setAlpha(0.16)
+      .setScale(0.7, 0.42)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(isoDepth(gx, gy, -1));
+  }
+
+  /** Blinking status LEDs on a server rack so it reads as alive. */
+  private addServerLeds(gx: number, gy: number): void {
+    const { x, y } = this.toWorld(gx, gy);
+    const top = y - 30;
+    const colors = [0x59f08a, 0xffd45e, 0x4ab6ff];
+    for (let i = 0; i < 3; i++) {
+      const led = this.add
+        .circle(x - 6 + i * 6, top + i * 3, 1.6, colors[i])
+        .setDepth(isoDepth(gx, gy, 2));
+      this.tweens.add({
+        targets: led,
+        alpha: { from: 0.25, to: 1 },
+        duration: 380 + i * 140,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.inOut',
+        delay: i * 200,
+      });
+    }
+  }
+
+  /** A one-shot expanding ring where the player tapped to move. */
+  private spawnRipple(x: number, y: number): void {
+    const r = this.add.image(x, y, TEX_RING).setTint(0x9fd0ff).setDepth(9990);
+    this.tweens.add({
+      targets: r,
+      scale: { from: ART_INV * 0.4, to: ART_INV * 1.7 },
+      alpha: { from: 0.75, to: 0 },
+      duration: 430,
+      ease: 'Cubic.out',
+      onComplete: () => r.destroy(),
+    });
   }
 
   private placeBox(gx: number, gy: number, key: string): void {
@@ -306,6 +359,24 @@ export class OfficeScene extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.MULTIPLY)
       .setDepth(9998)
       .setVisible(false);
+  }
+
+  // Timer-driven mood (defender): the room glow warms → reddens as the 72h nears.
+  private updateMood(state: { clock: { deadlineHours: number; hoursElapsed: number } }): void {
+    if (this.builtMode !== 'defender' || !this.glow) return;
+    const rem = Phaser.Math.Clamp(
+      (state.clock.deadlineHours - state.clock.hoursElapsed) / state.clock.deadlineHours,
+      0,
+      1,
+    );
+    const t = Math.round((1 - rem) * 100);
+    const c = Phaser.Display.Color.Interpolate.ColorWithColor(
+      Phaser.Display.Color.IntegerToColor(0xffe9c2),
+      Phaser.Display.Color.IntegerToColor(0xff5140),
+      100,
+      t,
+    );
+    this.glow.setTint(Phaser.Display.Color.GetColor(c.r, c.g, c.b)).setAlpha(0.09 + (1 - rem) * 0.13);
   }
 
   /** Recolour the world for the blue-team office vs the red-team lair. */
@@ -395,6 +466,7 @@ export class OfficeScene extends Phaser.Scene {
         .setPosition(target.x, target.y)
         .setDepth(isoDepth(gx, gy, 0))
         .setVisible(true);
+      this.spawnRipple(target.x, target.y);
       this.hover.setVisible(false);
       sfx.walk();
 
@@ -536,6 +608,7 @@ export class OfficeScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     const state = store.getState();
+    if (state.gamePhase === 'playing') this.updateMood(state);
     if (state.gamePhase === 'playing' && !state.activeDialogue && !state.activeInject) {
       this.tryKeyboardMove();
       // Batch passive clock drift so we don't re-render the UI every frame.
