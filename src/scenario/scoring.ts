@@ -57,6 +57,33 @@ function computeScore(state: GameState): number {
   return Math.round(score);
 }
 
+export interface ScorePart {
+  label: string;
+  value: number;
+}
+
+/** Human-readable breakdown of the final score for the debrief. */
+export function scoreBreakdown(state: GameState): ScorePart[] {
+  const { meters, clock } = state;
+  const w = SCORE_WEIGHTS;
+  const hoursRemaining = Math.max(0, clock.deadlineHours - clock.hoursElapsed);
+  const idealOrder =
+    state.flags.breachContained &&
+    state.flags.scopeKnown &&
+    state.flags.dpoConsulted &&
+    state.flags.regulatorNotified &&
+    !state.flags.coverup;
+
+  const parts: ScorePart[] = [
+    { label: 'Compliance', value: Math.round(w.compliance * meters.compliance) },
+    { label: 'Reputation', value: Math.round(w.reputation * meters.reputation) },
+    { label: 'Cost', value: -Math.round(w.cost * meters.cost) },
+    { label: 'Time remaining', value: Math.round(w.timeRemaining * hoursRemaining) },
+  ];
+  if (idealOrder) parts.push({ label: 'Ideal-sequence bonus', value: w.orderBonus });
+  return parts;
+}
+
 export function computeEnding(state: GameState): Ending {
   const f = state.flags;
   const missedDeadline = !f.regulatorNotified;
