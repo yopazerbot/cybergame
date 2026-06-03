@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
-import { CHAR_PLAYER } from '../TextureFactory';
+import { CHAR_PLAYER, TEX_RING } from '../TextureFactory';
 import { isoDepth } from '../iso';
 
 type ToWorld = (gx: number, gy: number) => { x: number; y: number };
 
 // The player avatar: click-to-move along an A* path with a faked walk bob.
+// Clearly tagged with a "YOU" badge and a marker ring so it's never mistaken for an NPC.
 export class Player extends Phaser.GameObjects.Container {
   gx: number;
   gy: number;
@@ -20,8 +21,26 @@ export class Player extends Phaser.GameObjects.Container {
     this.gy = gy;
     this.toWorld = toWorld;
 
+    // Marker ring on the floor under the player.
+    const ring = scene.add
+      .image(0, 6, TEX_RING)
+      .setOrigin(0.5, 0.5)
+      .setTint(0x2d6cdf)
+      .setAlpha(0.4);
+    scene.tweens.add({
+      targets: ring,
+      scale: { from: 0.92, to: 1.08 },
+      duration: 1100,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+    });
+
     this.avatar = scene.add.image(0, 0, CHAR_PLAYER).setOrigin(0.5, 0.92);
-    this.add(this.avatar);
+
+    const badge = this.makeBadge(scene);
+
+    this.add([ring, this.avatar, badge]);
     scene.add.existing(this);
     this.setDepth(isoDepth(gx, gy, 5));
 
@@ -35,6 +54,37 @@ export class Player extends Phaser.GameObjects.Container {
       ease: 'Sine.inOut',
       paused: true,
     });
+  }
+
+  private makeBadge(scene: Phaser.Scene): Phaser.GameObjects.Container {
+    const text = scene.add
+      .text(0, 0, 'YOU', {
+        fontFamily: 'Baloo 2, sans-serif',
+        fontSize: '12px',
+        color: '#ffffff',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
+    const w = text.width + 22;
+    const hgt = 22;
+    const bg = scene.add.graphics();
+    bg.fillStyle(0x2d6cdf, 1);
+    bg.fillRoundedRect(-w / 2, -hgt / 2, w, hgt, 11);
+    bg.lineStyle(2, 0xffffff, 0.95);
+    bg.strokeRoundedRect(-w / 2, -hgt / 2, w, hgt, 11);
+    bg.fillStyle(0x2d6cdf, 1);
+    bg.fillTriangle(-5, hgt / 2 - 1, 5, hgt / 2 - 1, 0, hgt / 2 + 6);
+
+    const badge = scene.add.container(0, -100, [bg, text]);
+    scene.tweens.add({
+      targets: badge,
+      y: -106,
+      duration: 900,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+    });
+    return badge;
   }
 
   private startWalk(): void {

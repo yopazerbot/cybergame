@@ -28,7 +28,7 @@ export class Npc extends Phaser.GameObjects.Container {
 
     // Bobbing down-chevron to draw the eye when there's something to do.
     this.arrow = scene.add
-      .text(0, -70, '▼', {
+      .text(0, -120, '▼', {
         fontFamily: 'Baloo 2, sans-serif',
         fontSize: '18px',
         color: '#ffd24a',
@@ -61,7 +61,7 @@ export class Npc extends Phaser.GameObjects.Container {
     });
     scene.tweens.add({
       targets: this.arrow,
-      y: -64,
+      y: -114,
       duration: 600,
       yoyo: true,
       repeat: -1,
@@ -101,7 +101,7 @@ export class Npc extends Phaser.GameObjects.Container {
     bg.fillStyle(0xffffff, 0.95);
     bg.fillTriangle(-5, hgt / 2 - 1, 5, hgt / 2 - 1, 0, hgt / 2 + 5);
 
-    return scene.add.container(0, -58, [bg, name, role]);
+    return scene.add.container(0, -102, [bg, name, role]);
   }
 
   setPending(pending: boolean): void {
