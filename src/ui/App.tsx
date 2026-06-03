@@ -12,14 +12,12 @@ import { InjectModal } from './components/InjectModal';
 import { Toasts } from './components/Toasts';
 import { ControlsLegend } from './components/ControlsLegend';
 import { Tutorial } from './components/Tutorial';
-import { NetworkButton } from './components/NetworkButton';
 import { ContainmentMap } from './components/ContainmentMap';
 import { ZoomControls } from './components/ZoomControls';
 
 export function App() {
   const state = useStore();
   const [name, setName] = useState(getUsername());
-  const [mapOpen, setMapOpen] = useState(false);
 
   if (!name) {
     return (
@@ -43,16 +41,13 @@ export function App() {
           {!state.activeDialogue && !state.activeInject && (
             <div className="side-rail">
               <ZoomControls />
-              {state.mode === 'defender' && (
-                <NetworkButton onOpen={() => setMapOpen(true)} />
-              )}
             </div>
+          )}
+          {!state.activeDialogue && !state.activeInject && state.mode === 'defender' && (
+            <ContainmentMap />
           )}
           {!state.activeDialogue && !state.activeInject && state.npcInRange && (
             <TalkPrompt npcId={state.npcInRange} />
-          )}
-          {mapOpen && state.mode === 'defender' && (
-            <ContainmentMap onClose={() => setMapOpen(false)} />
           )}
           {state.activeDialogue && <DialoguePanel npcId={state.activeDialogue.npcId} />}
           {state.activeInject && <InjectModal injectId={state.activeInject.id} />}

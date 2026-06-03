@@ -1970,3 +1970,58 @@ html.attacker-mode kbd {
   margin: 1px 0 5px;
   white-space: nowrap;
 }
+
+/* ------------------------------------------ docked (always-on) network panel */
+.net-dock {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 214px;
+  max-height: 86vh;
+  overflow: auto;
+  pointer-events: auto;
+  z-index: 6;
+}
+.net-dock-card {
+  padding: 12px;
+}
+.net-dock .net-head {
+  margin-bottom: 8px;
+}
+.net-title {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.net-dock .net-status {
+  font-size: 12px;
+  padding-top: 0;
+}
+.net-dock .net-exfil {
+  font-size: 11px;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.net-dock .net-actions {
+  margin-top: 10px;
+  gap: 8px;
+}
+.net-dock .net-sel {
+  font-size: 11.5px;
+}
+.net-dock .net-global {
+  gap: 8px;
+}
+.net-dock .btn {
+  padding: 7px 9px;
+  font-size: 12px;
+  border-radius: 10px;
+}
+.net-dock .net-hint {
+  font-size: 11px;
+}
+.net-dock .net-node-label {
+  display: none;
+}

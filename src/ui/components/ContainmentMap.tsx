@@ -20,7 +20,9 @@ const C2 = { x: 50, y: 8 };
 // Real-time containment minigame: isolate hosts / block C2 / rotate creds to stop
 // the intrusion before it reaches the customer DB and exfiltrates. The game clock
 // keeps running while this is open — the threat is live.
-export function ContainmentMap({ onClose }: { onClose: () => void }) {
+// Always-on compact panel docked in the UI (defender mode): the live intrusion
+// map, so containment is part of the screen rather than a modal you open.
+export function ContainmentMap() {
   const state = useStore();
   const net = state.network;
   const byId = net.hosts;
@@ -30,24 +32,17 @@ export function ContainmentMap({ onClose }: { onClose: () => void }) {
   const selHost = sel ? byId[sel] : null;
 
   return (
-    <div className="overlay center net-overlay">
-      <div className="card net-card">
-        <button className="net-close" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
-
+    <div className="net-dock">
+      <div className="card net-dock-card">
         <div className="net-head">
-          <div>
-            <div className="badge">Live containment</div>
-            <h2>Network map</h2>
-          </div>
+          <div className="net-title">🛰️ Live containment</div>
           <div className={`net-status ${contained ? 'good' : 'bad'}`}>
-            {contained ? '✅ Contained' : `🔴 ${compromisedCount(net)} host(s) compromised`}
+            {contained ? '✅ Contained' : `🔴 ${compromisedCount(net)}`}
           </div>
         </div>
 
         <div className="net-exfil">
-          <span>PII exfiltrated to C2</span>
+          <span>Exfil</span>
           <div className="net-exfil-bar">
             <div
               className={net.exfilPct >= 50 ? 'crit' : ''}
