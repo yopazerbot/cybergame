@@ -1555,3 +1555,58 @@ kbd {
   color: #b13a32;
   border-color: #f2c2bd;
 }
+
+/* -------------------------------------------------- start-screen handle row */
+.handle-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 auto 18px;
+  padding: 8px 14px;
+  width: fit-content;
+  max-width: 100%;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.handle-label {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+.handle-name {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 16px;
+  color: var(--ink);
+}
+.handle-change {
+  border: none;
+  background: none;
+  color: var(--brand-dk);
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.handle-change:hover {
+  text-decoration: underline;
+}
+.handle-input {
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  outline: none;
+  min-width: 160px;
+}
+.handle-input:focus {
+  border-color: var(--brand);
+}
+.handle-save {
+  padding: 6px 14px;
+  font-size: 13px;
+}

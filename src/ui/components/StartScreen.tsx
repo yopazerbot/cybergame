@@ -6,6 +6,8 @@ import {
   setDifficulty,
   getRecommendations,
   setRecommendations,
+  getUsername,
+  setUsername,
 } from '../../core/profile';
 import type { Difficulty } from '../../core/types';
 import { SCENARIO_INTRO } from '../../scenario/scenario';
@@ -18,6 +20,9 @@ const DIFFS: Difficulty[] = ['easy', 'normal', 'hard'];
 export function StartScreen() {
   const [diff, setDiff] = useState<Difficulty>(getDifficulty());
   const [rec, setRec] = useState<boolean>(getRecommendations());
+  const [name, setName] = useState<string>(getUsername());
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState(name);
 
   const pick = (d: Difficulty) => {
     setDiff(d);
@@ -26,6 +31,13 @@ export function StartScreen() {
   const pickRec = (on: boolean) => {
     setRec(on);
     setRecommendations(on);
+  };
+  const saveName = () => {
+    const n = draftName.trim().slice(0, 24);
+    if (!n) return;
+    setUsername(n);
+    setName(n);
+    setEditingName(false);
   };
   const start = () => store.startGame(diff, rec);
 
@@ -37,6 +49,40 @@ export function StartScreen() {
           Breach<span className="accent">!</span>
         </h1>
         <p className="lead">{SCENARIO_INTRO}</p>
+
+        <div className="handle-row">
+          {editingName ? (
+            <>
+              <span className="handle-label">Handle</span>
+              <input
+                className="handle-input"
+                autoFocus
+                maxLength={24}
+                value={draftName}
+                placeholder="e.g. NightOwl"
+                onChange={(e) => setDraftName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && saveName()}
+              />
+              <button className="btn handle-save" disabled={!draftName.trim()} onClick={saveName}>
+                Save
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="handle-label">Playing as</span>
+              <strong className="handle-name">{name || 'Anonymous'}</strong>
+              <button
+                className="handle-change"
+                onClick={() => {
+                  setDraftName(name);
+                  setEditingName(true);
+                }}
+              >
+                ✎ Change
+              </button>
+            </>
+          )}
+        </div>
 
         <div className="roles">
           {STAKEHOLDERS.map((s) => (
