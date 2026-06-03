@@ -1240,3 +1240,247 @@ kbd {
   padding: 2px 6px;
   border-radius: 999px;
 }
+
+/* ----------------------------------------------------- containment map + fab */
+.net-fab {
+  position: absolute;
+  top: 92px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.net-fab:hover {
+  transform: translateY(-1px);
+}
+.net-fab-ico {
+  font-size: 22px;
+  line-height: 1;
+}
+.net-fab-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+.net-fab-text strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+.net-fab-text small {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.net-fab.alert {
+  border-color: rgba(232, 85, 78, 0.55);
+  animation: net-pulse 1.6s ease-in-out infinite;
+}
+.net-fab.alert .net-fab-text small {
+  color: var(--bad);
+  font-weight: 700;
+}
+.net-fab.safe {
+  border-color: rgba(33, 163, 102, 0.5);
+}
+.net-fab.safe .net-fab-text small {
+  color: var(--good);
+}
+@keyframes net-pulse {
+  0%,
+  100% {
+    box-shadow: 0 14px 40px rgba(24, 38, 74, 0.22), 0 0 0 0 rgba(232, 85, 78, 0);
+  }
+  50% {
+    box-shadow: 0 14px 40px rgba(24, 38, 74, 0.22), 0 0 0 6px rgba(232, 85, 78, 0.18);
+  }
+}
+
+.net-overlay {
+  pointer-events: auto;
+}
+.net-card {
+  position: relative;
+  width: min(560px, 92vw);
+  max-height: 90vh;
+  overflow: auto;
+}
+.net-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  font-size: 14px;
+  cursor: pointer;
+}
+.net-close:hover {
+  color: var(--ink);
+}
+.net-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.net-head h2 {
+  margin: 6px 0 0;
+}
+.net-status {
+  font-weight: 800;
+  font-size: 13px;
+  padding-top: 4px;
+  white-space: nowrap;
+}
+.net-status.good {
+  color: var(--good);
+}
+.net-status.bad {
+  color: var(--bad);
+}
+
+.net-exfil {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 10px;
+}
+.net-exfil-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.net-exfil-bar > div {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--mid);
+  transition: width 0.3s ease;
+}
+.net-exfil-bar > div.crit {
+  background: var(--bad);
+}
+.net-exfil strong {
+  color: var(--ink);
+}
+
+.net-svg {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  background: radial-gradient(circle at 50% 40%, #f4f7fd 0%, #e7edf8 100%);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.net-edge {
+  stroke: #c3cde6;
+  stroke-width: 1;
+}
+.net-edge.c2 {
+  stroke: #b9c2da;
+  stroke-dasharray: 2 2;
+}
+.net-exfil-line {
+  stroke: var(--bad);
+  stroke-width: 1.4;
+  stroke-dasharray: 3 2;
+  animation: net-dash 0.6s linear infinite;
+}
+@keyframes net-dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+.net-c2 circle {
+  fill: #39425f;
+}
+.net-c2 .net-c2-label {
+  fill: #fff;
+  font-size: 4px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+.net-c2.blocked circle {
+  fill: #8a93b4;
+  opacity: 0.5;
+}
+.net-node {
+  cursor: pointer;
+}
+.net-node circle {
+  stroke: #fff;
+  stroke-width: 1.2;
+  transition: r 0.12s ease;
+}
+.net-node.sel circle {
+  stroke: var(--brand);
+  stroke-width: 2;
+}
+.net-node.compromised circle {
+  animation: net-throb 1.4s ease-in-out infinite;
+}
+@keyframes net-throb {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+.net-node-ico {
+  font-size: 6px;
+  text-anchor: middle;
+  pointer-events: none;
+}
+.net-node-label {
+  fill: var(--ink-soft);
+  font-size: 3.4px;
+  font-weight: 700;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.net-actions {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.net-sel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.net-sel strong {
+  color: var(--ink);
+}
+.net-hint {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.net-global {
+  display: flex;
+  gap: 10px;
+}
+.net-global .btn {
+  flex: 1;
+}

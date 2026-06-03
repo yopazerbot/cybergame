@@ -1,6 +1,8 @@
 // Shared types used by both the Phaser world and the React UI.
 // Keep this file framework-agnostic.
 
+import type { NetworkState } from '../scenario/network';
+
 export type Role = 'tech' | 'management' | 'ciso' | 'dpo' | 'regulator' | 'customer';
 
 export type Phase = 'detection' | 'containment' | 'assessment' | 'notification' | 'resolution';
@@ -58,6 +60,8 @@ export interface GameState {
   activeInject: { id: string } | null;
   /** Injects that have already fired (each fires at most once). */
   firedInjects: string[];
+  /** Live containment-map state (intrusion spread + exfiltration). */
+  network: NetworkState;
   objectives: Objective[];
   /** NPC the player is currently standing next to (for the "Talk" prompt). */
   npcInRange: Role | null;

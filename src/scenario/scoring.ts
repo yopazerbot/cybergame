@@ -5,6 +5,15 @@ import { eventBus } from '../core/eventBus';
 import { sfx } from '../core/sfx';
 import { NODES, NODE_BY_ID, PHASE_ORDER, type DecisionNode } from './scenario';
 import { INJECTS, INJECT_BY_ID, type Inject } from './injects';
+import {
+  tickNetwork,
+  isolate,
+  blockC2,
+  rotateCreds,
+  isContained,
+  ACTION_COST,
+  type NetworkState,
+} from './network';
 
 // Pure-ish resolver: the only place that turns a player choice into new state.
 
@@ -231,9 +240,11 @@ export function advanceClock(hours: number): void {
   const state = store.getState();
   if (state.gamePhase !== 'playing' || state.activeDialogue || state.activeInject) return;
   const clock = { ...state.clock, hoursElapsed: state.clock.hoursElapsed + hours };
-  let next: GameState = { ...state, clock, score: computeScore({ ...state, clock }) };
+  const network = tickNetwork(state.network, hours);
+  let next: GameState = applyNetworkTransitions(state, { ...state, clock, network });
+  next = { ...next, score: computeScore(next) };
 
-  if (clock.hoursElapsed >= clock.deadlineHours && !state.flags.regulatorNotified) {
+  if (next.clock.hoursElapsed >= next.clock.deadlineHours && !next.flags.regulatorNotified) {
     endGame(next);
     return;
   }
@@ -247,6 +258,64 @@ export function advanceClock(hours: number): void {
   }
 
   store.setState(next);
+}
+
+// ---------------------------------------------------------------- containment map
+/** Apply meter/flag consequences when the network crosses key thresholds. */
+function applyNetworkTransitions(prev: GameState, next: GameState): GameState {
+  const meters = { ...next.meters };
+  const flags = { ...next.flags };
+
+  if (!isContained(prev.network) && isContained(next.network) && !flags.networkContained) {
+    flags.networkContained = true;
+    flags.breachContained = true;
+    meters.compliance = clamp(meters.compliance + 6);
+    eventBus.emit('notify', { text: 'Network contained — the intrusion is stopped', tone: 'good' });
+    sfx.good();
+  }
+  if (next.network.exfilPct >= 50 && !flags.majorExfil) {
+    flags.majorExfil = true;
+    meters.compliance = clamp(meters.compliance - 8);
+    meters.reputation = clamp(meters.reputation - 5);
+    eventBus.emit('notify', { text: 'Major data exfiltration in progress!', tone: 'bad' });
+    sfx.bad();
+  }
+
+  return { ...next, meters, flags };
+}
+
+function commitNetwork(net: NetworkState, spec: { hours: number; cost: number }): void {
+  const state = store.getState();
+  if (state.gamePhase !== 'playing') return;
+  const meters = { ...state.meters, cost: clamp(state.meters.cost + spec.cost) };
+  const clock = { ...state.clock, hoursElapsed: state.clock.hoursElapsed + spec.hours };
+  let next: GameState = applyNetworkTransitions(state, { ...state, network: net, meters, clock });
+  next = { ...next, score: computeScore(next) };
+
+  if (next.clock.hoursElapsed >= next.clock.deadlineHours && !next.flags.regulatorNotified) {
+    endGame(next);
+  } else {
+    store.setState(next);
+  }
+}
+
+/** Player containment actions dispatched from the map UI. */
+export function networkIsolate(hostId: string): void {
+  const net = store.getState().network;
+  if (net.hosts[hostId]?.status === 'isolated') return;
+  commitNetwork(isolate(net, hostId), ACTION_COST.isolate);
+}
+
+export function networkBlockC2(): void {
+  const net = store.getState().network;
+  if (net.c2Blocked) return;
+  commitNetwork(blockC2(net), ACTION_COST.blockC2);
+}
+
+export function networkRotateCreds(): void {
+  const net = store.getState().network;
+  if (net.credsRotated) return;
+  commitNetwork(rotateCreds(net), ACTION_COST.rotate);
 }
 
 function pickEligibleInject(state: GameState): Inject | null {

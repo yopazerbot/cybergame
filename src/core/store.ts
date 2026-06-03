@@ -2,6 +2,7 @@ import type { GameState, Difficulty } from './types';
 import { DIFFICULTY } from './config';
 import { eventBus } from './eventBus';
 import { buildObjectives } from '../scenario/objectives';
+import { initialNetwork } from '../scenario/network';
 
 // Tiny observable store — the single source of truth.
 // Phaser and React both read via getState() and subscribe via subscribe().
@@ -20,6 +21,7 @@ function initialState(difficulty: Difficulty = 'normal'): GameState {
     activeDialogue: null,
     activeInject: null,
     firedInjects: [],
+    network: initialNetwork(),
     objectives: [],
     npcInRange: null,
     ending: null,

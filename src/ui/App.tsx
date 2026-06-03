@@ -12,10 +12,13 @@ import { InjectModal } from './components/InjectModal';
 import { Toasts } from './components/Toasts';
 import { ControlsLegend } from './components/ControlsLegend';
 import { Tutorial } from './components/Tutorial';
+import { NetworkButton } from './components/NetworkButton';
+import { ContainmentMap } from './components/ContainmentMap';
 
 export function App() {
   const state = useStore();
   const [name, setName] = useState(getUsername());
+  const [mapOpen, setMapOpen] = useState(false);
 
   if (!name) {
     return (
@@ -36,9 +39,13 @@ export function App() {
           <ControlsLegend />
           <Toasts />
           <Tutorial />
+          {!state.activeDialogue && !state.activeInject && (
+            <NetworkButton onOpen={() => setMapOpen(true)} />
+          )}
           {!state.activeDialogue && !state.activeInject && state.npcInRange && (
             <TalkPrompt npcId={state.npcInRange} />
           )}
+          {mapOpen && <ContainmentMap onClose={() => setMapOpen(false)} />}
           {state.activeDialogue && <DialoguePanel npcId={state.activeDialogue.npcId} />}
           {state.activeInject && <InjectModal injectId={state.activeInject.id} />}
         </>
