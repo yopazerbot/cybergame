@@ -71,6 +71,8 @@ export class OfficeScene extends Phaser.Scene {
   private npcTiles = new Set<string>();
   private marker!: Phaser.GameObjects.Image;
   private hover!: Phaser.GameObjects.Image;
+  private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
+  private wasd?: Record<string, Phaser.Input.Keyboard.Key>;
   private toWorld = (gx: number, gy: number) => {
     const w = gridToWorld(gx, gy);
     return { x: w.x, y: w.y };
@@ -360,6 +362,51 @@ export class OfficeScene extends Phaser.Scene {
         eventBus.emit('requestDialogue', { npcId: state.npcInRange });
       }
     });
+
+    // Arrow keys / WASD walk the avatar one tile in a screen direction.
+    this.cursors = this.input.keyboard?.createCursorKeys();
+    this.wasd = this.input.keyboard?.addKeys({
+      up: Phaser.Input.Keyboard.KeyCodes.W,
+      down: Phaser.Input.Keyboard.KeyCodes.S,
+      left: Phaser.Input.Keyboard.KeyCodes.A,
+      right: Phaser.Input.Keyboard.KeyCodes.D,
+    }) as Record<string, Phaser.Input.Keyboard.Key> | undefined;
+  }
+
+  // Move one tile per step in the pressed screen direction (iso diagonal in grid
+  // space). Holding a key keeps stepping once the previous tile tween finishes.
+  private tryKeyboardMove(): void {
+    if (this.player.moving) return;
+    const down = (k?: Phaser.Input.Keyboard.Key) => !!k?.isDown;
+    const c = this.cursors;
+    const w = this.wasd;
+    let dgx = 0;
+    let dgy = 0;
+    if (down(c?.up) || down(w?.up)) {
+      dgx = -1;
+      dgy = -1;
+    } else if (down(c?.down) || down(w?.down)) {
+      dgx = 1;
+      dgy = 1;
+    } else if (down(c?.left) || down(w?.left)) {
+      dgx = -1;
+      dgy = 1;
+    } else if (down(c?.right) || down(w?.right)) {
+      dgx = 1;
+      dgy = -1;
+    } else {
+      return;
+    }
+    const tx = this.player.gx + dgx;
+    const ty = this.player.gy + dgy;
+    if (!this.isWalkable(tx, ty)) return;
+    // Don't cut through a wall corner: need at least one open orthogonal side.
+    if (!this.isWalkable(tx, this.player.gy) && !this.isWalkable(this.player.gx, ty)) return;
+    sfx.walk();
+    this.player.moveAlongPath([{ gx: tx, gy: ty }], () => {
+      eventBus.emit('playerArrived', { gx: this.player.gx, gy: this.player.gy });
+      this.updateNpcInRange();
+    });
   }
 
   private npcAt(gx: number, gy: number): Role | null {
@@ -438,6 +485,7 @@ export class OfficeScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     const state = store.getState();
     if (state.gamePhase === 'playing' && !state.activeDialogue && !state.activeInject) {
+      this.tryKeyboardMove();
       // Batch passive clock drift so we don't re-render the UI every frame.
       // Drift is fixed for all difficulties — difficulty never changes the clock.
       this.clockAccum += (HOURS_PER_REAL_SECOND * delta) / 1000;
