@@ -160,6 +160,7 @@ function makeCharacter(
   accent: number,
   role = '',
   back = false,
+  step = 0,
 ): void {
   const w = 58;
   const h = 96;
@@ -176,28 +177,30 @@ function makeCharacter(
   g.fillStyle(0x16203a, 0.22);
   g.fillEllipse(cx, h - 4, 40, 13);
 
-  // Trousers + legs.
+  // Trousers + legs. `step` swings them fore/aft for a 2-frame walk stride.
+  const legDY = step * 2.5;
   g.lineStyle(2, OUT, 0.85);
   g.fillStyle(0x3a4157, 1);
-  g.fillRoundedRect(cx - 12, 58, 11, 20, 4);
-  g.fillRoundedRect(cx + 1, 58, 11, 20, 4);
-  g.strokeRoundedRect(cx - 12, 58, 11, 20, 4);
-  g.strokeRoundedRect(cx + 1, 58, 11, 20, 4);
-  // Shoes.
+  g.fillRoundedRect(cx - 12, 58 + legDY, 11, 20, 4);
+  g.fillRoundedRect(cx + 1, 58 - legDY, 11, 20, 4);
+  g.strokeRoundedRect(cx - 12, 58 + legDY, 11, 20, 4);
+  g.strokeRoundedRect(cx + 1, 58 - legDY, 11, 20, 4);
+  // Shoes follow their legs, splaying slightly fore/aft.
   g.fillStyle(0x23283a, 1);
-  g.fillRoundedRect(cx - 14, 75, 13, 8, 3);
-  g.fillRoundedRect(cx + 1, 75, 13, 8, 3);
+  g.fillRoundedRect(cx - 14 - step * 2, 75 + legDY, 13, 8, 3);
+  g.fillRoundedRect(cx + 1 + step * 2, 75 - legDY, 13, 8, 3);
 
-  // Arms.
+  // Arms counter-swing against the legs.
+  const armDY = step * 3;
   g.fillStyle(dark, 1);
   g.lineStyle(2, OUT, 0.8);
-  g.fillRoundedRect(cx - 21, 33, 9, 26, 4);
-  g.fillRoundedRect(cx + 12, 33, 9, 26, 4);
-  g.strokeRoundedRect(cx - 21, 33, 9, 26, 4);
-  g.strokeRoundedRect(cx + 12, 33, 9, 26, 4);
+  g.fillRoundedRect(cx - 21, 33 - armDY, 9, 26, 4);
+  g.fillRoundedRect(cx + 12, 33 + armDY, 9, 26, 4);
+  g.strokeRoundedRect(cx - 21, 33 - armDY, 9, 26, 4);
+  g.strokeRoundedRect(cx + 12, 33 + armDY, 9, 26, 4);
   g.fillStyle(skin, 1); // hands
-  g.fillCircle(cx - 16, 58, 4);
-  g.fillCircle(cx + 16, 58, 4);
+  g.fillCircle(cx - 16, 58 - armDY, 4);
+  g.fillCircle(cx + 16, 58 + armDY, 4);
 
   // Torso with shading.
   g.fillStyle(body, 1);
@@ -324,7 +327,10 @@ function makeShadow(scene: Phaser.Scene, key: string): void {
 }
 
 export const CHAR_PLAYER = 'char_player';
-export const CHAR_PLAYER_BACK = 'char_player_back';
+export const CHAR_PLAYER_WALK1 = 'char_player_walk1';
+export const CHAR_PLAYER_WALK2 = 'char_player_walk2';
+export const CHAR_PLAYER_BACK_WALK1 = 'char_player_back_walk1';
+export const CHAR_PLAYER_BACK_WALK2 = 'char_player_back_walk2';
 export const TEX_RUG = 'rug';
 export const TEX_RING = 'ring';
 export const TEX_TILE_HI = 'tile_hi';
@@ -569,7 +575,10 @@ export function generateTextures(scene: Phaser.Scene): void {
   makeBox(scene, 'boardroom_table_r', 16, 0x8a6a48, 0x6e5238, 0x57402b, tableDecor);
 
   makeCharacter(scene, CHAR_PLAYER, 0x2d6cdf, 0x163a82);
-  makeCharacter(scene, CHAR_PLAYER_BACK, 0x2d6cdf, 0x163a82, '', true);
+  makeCharacter(scene, CHAR_PLAYER_WALK1, 0x2d6cdf, 0x163a82, '', false, 1);
+  makeCharacter(scene, CHAR_PLAYER_WALK2, 0x2d6cdf, 0x163a82, '', false, -1);
+  makeCharacter(scene, CHAR_PLAYER_BACK_WALK1, 0x2d6cdf, 0x163a82, '', true, 1);
+  makeCharacter(scene, CHAR_PLAYER_BACK_WALK2, 0x2d6cdf, 0x163a82, '', true, -1);
   generateCharacters(scene, STAKEHOLDERS);
 }
 

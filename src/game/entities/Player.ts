@@ -1,5 +1,13 @@
 import Phaser from 'phaser';
-import { CHAR_PLAYER, CHAR_PLAYER_BACK, TEX_RING, TEX_SHADOW } from '../TextureFactory';
+import {
+  CHAR_PLAYER,
+  CHAR_PLAYER_BACK_WALK1,
+  CHAR_PLAYER_BACK_WALK2,
+  CHAR_PLAYER_WALK1,
+  CHAR_PLAYER_WALK2,
+  TEX_RING,
+  TEX_SHADOW,
+} from '../TextureFactory';
 import { ART_INV } from '../../core/config';
 import { isoDepth } from '../iso';
 
@@ -14,6 +22,7 @@ export class Player extends Phaser.GameObjects.Container {
   private avatar: Phaser.GameObjects.Image;
   private bob: Phaser.Tweens.Tween;
   private toWorld: ToWorld;
+  private stepPhase = false;
 
   constructor(scene: Phaser.Scene, gx: number, gy: number, toWorld: ToWorld) {
     const { x, y } = toWorld(gx, gy);
@@ -122,8 +131,19 @@ export class Player extends Phaser.GameObjects.Container {
         duration: 230,
         ease: 'Linear',
         onStart: () => {
-          // Face away when walking up-screen, toward the camera when walking down.
-          this.avatar.setTexture(y < this.y ? CHAR_PLAYER_BACK : CHAR_PLAYER);
+          // Face away when walking up-screen, toward the camera when walking down,
+          // and alternate stride frames so the legs/arms actually swing.
+          this.stepPhase = !this.stepPhase;
+          const back = y < this.y;
+          this.avatar.setTexture(
+            back
+              ? this.stepPhase
+                ? CHAR_PLAYER_BACK_WALK1
+                : CHAR_PLAYER_BACK_WALK2
+              : this.stepPhase
+                ? CHAR_PLAYER_WALK1
+                : CHAR_PLAYER_WALK2,
+          );
           this.avatar.setFlipX(x < this.x);
           // Lean into the direction of travel for a sense of momentum.
           this.avatar.setRotation(Math.sign(x - this.x) * 0.08);
