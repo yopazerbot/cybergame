@@ -8,8 +8,13 @@ export function ObjectiveTracker() {
 
   return (
     <div className={`objectives ${open ? 'open' : 'closed'}`}>
-      <button className="objectives-head" onClick={() => setOpen((v) => !v)}>
-        <span>📋 Incident checklist</span>
+      <button
+        className="objectives-head"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label={`${open ? 'Collapse' : 'Expand'} objective checklist`}
+      >
+        <span>📋 {state.mode === 'attacker' ? 'Heist checklist' : 'Incident checklist'}</span>
         <span className="obj-count">
           {done}/{state.objectives.length}
         </span>

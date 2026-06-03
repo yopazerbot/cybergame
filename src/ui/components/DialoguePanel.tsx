@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Role } from '../../core/types';
 import { store } from '../../core/store';
 import { nodeForStakeholder, resolveChoice } from '../../scenario/scoring';
 import { recommendedChoiceId, type Choice } from '../../scenario/scenario';
 import { campaignStakeholderById, meterLabels } from '../../scenario/campaign';
+import { useFocusTrap } from '../useFocusTrap';
 
 export function DialoguePanel({ npcId }: { npcId: Role }) {
   const mode = store.getState().mode;
@@ -14,11 +15,39 @@ export function DialoguePanel({ npcId }: { npcId: Role }) {
   const recId = node && showRecs ? recommendedChoiceId(node) : null;
   const portraitColor = '#' + s.colors.body.toString(16).padStart(6, '0');
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  const choiceRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  useFocusTrap(cardRef);
+
   const close = () => store.setState({ ...store.getState(), activeDialogue: null });
+
+  // Esc closes the dialogue (same as "Leave").
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Put initial focus on the recommended choice (or the first) when choices show.
+  useEffect(() => {
+    if (!node || picked) return;
+    const idx = recId ? node.choices.findIndex((c) => c.id === recId) : 0;
+    choiceRefs.current[Math.max(0, idx)]?.focus();
+  }, [node?.id, picked]);
+
+  const onChoiceKey = (e: React.KeyboardEvent, idx: number, count: number) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const next = (idx + (e.key === 'ArrowDown' ? 1 : -1) + count) % count;
+      choiceRefs.current[next]?.focus();
+    }
+  };
 
   return (
     <div className="overlay bottom">
-      <div className="card dialogue">
+      <div className="card dialogue" ref={cardRef} role="dialog" aria-modal="true" aria-label={`Talk to ${s.name}`}>
         <div className="dialogue-portrait" style={{ background: portraitColor }}>
           <span>{s.emoji}</span>
         </div>
@@ -44,11 +73,13 @@ export function DialoguePanel({ npcId }: { npcId: Role }) {
               <div className="dialogue-heading">{node.heading}</div>
               <p className="dialogue-text">{node.prompt}</p>
               <div className="choices">
-                {node.choices.map((c) => (
+                {node.choices.map((c, i) => (
                   <button
                     key={c.id}
+                    ref={(el) => (choiceRefs.current[i] = el)}
                     className={`btn choice ${c.id === recId ? 'recommended' : ''}`}
                     onClick={() => setPicked(c)}
+                    onKeyDown={(e) => onChoiceKey(e, i, node.choices.length)}
                   >
                     <span className="choice-label">{c.label}</span>
                     {showRecs && c.tag && (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../useStore';
 import { Timer } from './Timer';
 import { sfx } from '../../core/sfx';
@@ -59,6 +59,22 @@ export function Hud() {
     }
   };
 
+  // Keyboard shortcuts: R restart, M mute, ? tutorial — only while playing and
+  // not typing into a field, and not while a decision modal is open.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const s = store.getState();
+      if (s.gamePhase !== 'playing' || s.activeDialogue || s.activeInject) return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.key === 'r' || e.key === 'R') restart();
+      else if (e.key === 'm' || e.key === 'M') toggleMute();
+      else if (e.key === '?') eventBus.emit('startTutorial', undefined);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   return (
     <div className="hud">
       <Timer clock={state.clock} mode={state.mode} />
@@ -91,17 +107,23 @@ export function Hud() {
           <span className="score-cap">pts</span>
         </div>
         <div className="hud-buttons">
-          <button className="mute-btn" onClick={restart} title="Restart game">
+          <button className="mute-btn" onClick={restart} title="Restart game (R)" aria-label="Restart game">
             🔄
           </button>
           <button
             className="mute-btn"
             onClick={() => eventBus.emit('startTutorial', undefined)}
-            title="Replay tutorial"
+            title="Replay tutorial (?)"
+            aria-label="Replay tutorial"
           >
             ❔
           </button>
-          <button className="mute-btn" onClick={toggleMute} title="Toggle sound">
+          <button
+            className="mute-btn"
+            onClick={toggleMute}
+            title="Toggle sound (M)"
+            aria-label={muted ? 'Unmute sound' : 'Mute sound'}
+          >
             {muted ? '🔇' : '🔊'}
           </button>
         </div>
