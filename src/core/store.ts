@@ -1,5 +1,5 @@
 import type { GameState, Difficulty } from './types';
-import { DIFFICULTY } from './config';
+import { DIFFICULTY, DEADLINE_HOURS } from './config';
 import { eventBus } from './eventBus';
 import { buildObjectives } from '../scenario/objectives';
 import { initialNetwork } from '../scenario/network';
@@ -14,7 +14,7 @@ function initialState(difficulty: Difficulty = 'normal', recommendations = true)
     difficulty,
     recommendations,
     phase: 'detection',
-    clock: { hoursElapsed: 0, deadlineHours: d.deadlineHours },
+    clock: { hoursElapsed: 0, deadlineHours: DEADLINE_HOURS },
     meters: { reputation: d.reputation, compliance: d.compliance, cost: d.cost },
     score: 0,
     flags: {},

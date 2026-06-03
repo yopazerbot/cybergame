@@ -1,5 +1,5 @@
 import type { GameState, Phase, Role, Ending } from '../core/types';
-import { SCORE_WEIGHTS } from '../core/config';
+import { SCORE_WEIGHTS, DIFFICULTY } from '../core/config';
 import { store } from '../core/store';
 import { eventBus } from '../core/eventBus';
 import { sfx } from '../core/sfx';
@@ -319,6 +319,8 @@ export function networkRotateCreds(): void {
 }
 
 function pickEligibleInject(state: GameState): Inject | null {
+  // Difficulty caps how many crisis injects a run can throw at the player.
+  if (state.firedInjects.length >= DIFFICULTY[state.difficulty].maxInjects) return null;
   const candidates = INJECTS.filter(
     (i) =>
       !state.firedInjects.includes(i.id) &&

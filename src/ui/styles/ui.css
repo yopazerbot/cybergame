@@ -1528,3 +1528,30 @@ kbd {
     grid-template-columns: 1fr;
   }
 }
+
+/* Difficulty chip on each leaderboard row. */
+.scoreboard .diff-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.scoreboard .diff-tag.easy {
+  color: #1c7d4d;
+  border-color: #b6e3c8;
+}
+.scoreboard .diff-tag.normal {
+  color: #9a6a12;
+  border-color: #f0dcae;
+}
+.scoreboard .diff-tag.hard {
+  color: #b13a32;
+  border-color: #f2c2bd;
+}

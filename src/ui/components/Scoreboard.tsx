@@ -10,6 +10,7 @@ const ENDING_ICON: Record<string, string> = {
 };
 
 const DIFF_ICON: Record<string, string> = { easy: '🟢', normal: '🟡', hard: '🔴' };
+const DIFF_LABEL: Record<string, string> = { easy: 'Easy', normal: 'Normal', hard: 'Hard' };
 
 // Cross-session leaderboard. Pass `scores` to render a known list (e.g. the POST
 // response on the debrief); omit it to fetch the current top list.
@@ -51,7 +52,9 @@ export function Scoreboard({
             {s.name}
           </span>
           <span className="tags">
-            <span title={`difficulty: ${s.difficulty}`}>{DIFF_ICON[s.difficulty] ?? ''}</span>
+            <span className={`diff-tag ${s.difficulty}`} title={`difficulty: ${s.difficulty}`}>
+              {DIFF_ICON[s.difficulty] ?? ''} {DIFF_LABEL[s.difficulty] ?? s.difficulty}
+            </span>
             <span title={s.ending}>{ENDING_ICON[s.ending] ?? ''}</span>
           </span>
           <span className="pts">{s.score.toLocaleString()}</span>

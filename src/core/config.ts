@@ -22,13 +22,14 @@ export const GRID_SIZE = 12;
 export const DEADLINE_HOURS = 72;
 
 /**
- * Difficulty presets. `deadlineHours` is the clock budget, `drift` is ambient
- * game-hours per real second, and the meters set the starting position.
+ * Difficulty presets. Difficulty does NOT change the clock — every run gets the
+ * same fixed 72h GDPR window and the same passive drift. It only sets how hard
+ * the scenario starts (the meters) and how many crisis injects can fire.
  */
 export const DIFFICULTY = {
-  easy: { label: 'Easy', deadlineHours: 96, drift: 0.25, reputation: 75, compliance: 66, cost: 8 },
-  normal: { label: 'Normal', deadlineHours: 72, drift: 0.35, reputation: 70, compliance: 60, cost: 10 },
-  hard: { label: 'Hard', deadlineHours: 54, drift: 0.5, reputation: 62, compliance: 52, cost: 14 },
+  easy: { label: 'Easy', maxInjects: 1, reputation: 75, compliance: 66, cost: 8 },
+  normal: { label: 'Normal', maxInjects: 3, reputation: 70, compliance: 60, cost: 10 },
+  hard: { label: 'Hard', maxInjects: 5, reputation: 62, compliance: 52, cost: 14 },
 } as const;
 
 /**

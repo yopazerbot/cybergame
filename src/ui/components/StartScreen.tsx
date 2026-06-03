@@ -87,7 +87,9 @@ export function StartScreen() {
                 onClick={() => pick(d)}
               >
                 {DIFFICULTY[d].label}
-                <em>{DIFFICULTY[d].deadlineHours}h</em>
+                <em>
+                  {DIFFICULTY[d].maxInjects} {DIFFICULTY[d].maxInjects === 1 ? 'crisis' : 'crises'}
+                </em>
               </button>
             ))}
           </div>

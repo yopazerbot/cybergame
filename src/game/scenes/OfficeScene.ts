@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GRID_SIZE, TILE_H, ART_INV, HOURS_PER_REAL_SECOND, DIFFICULTY } from '../../core/config';
+import { GRID_SIZE, TILE_H, ART_INV, HOURS_PER_REAL_SECOND } from '../../core/config';
 import { gridToWorld, worldToGrid, isoDepth } from '../iso';
 import { findPath } from '../pathfinding';
 import { Player } from '../entities/Player';
@@ -398,8 +398,8 @@ export class OfficeScene extends Phaser.Scene {
     const state = store.getState();
     if (state.gamePhase === 'playing' && !state.activeDialogue && !state.activeInject) {
       // Batch passive clock drift so we don't re-render the UI every frame.
-      const drift = DIFFICULTY[state.difficulty]?.drift ?? HOURS_PER_REAL_SECOND;
-      this.clockAccum += (drift * delta) / 1000;
+      // Drift is fixed for all difficulties — difficulty never changes the clock.
+      this.clockAccum += (HOURS_PER_REAL_SECOND * delta) / 1000;
       if (this.clockAccum >= 0.15) {
         advanceClock(this.clockAccum);
         this.clockAccum = 0;
