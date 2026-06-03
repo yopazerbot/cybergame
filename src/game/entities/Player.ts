@@ -1,44 +1,59 @@
 import Phaser from 'phaser';
-import { TEX_RING } from '../TextureFactory';
+import { CHAR_PLAYER, TEX_RING } from '../TextureFactory';
+import { isoDepth } from '../iso';
 
 type ToWorld = (gx: number, gy: number) => { x: number; y: number };
-type Dir = 'down' | 'up' | 'side';
 
-// Top-down animated player avatar with a "YOU" badge + marker ring.
+// The player avatar: click-to-move along an A* path with a faked walk bob.
+// Clearly tagged with a "YOU" badge and a marker ring so it's never mistaken for an NPC.
 export class Player extends Phaser.GameObjects.Container {
   gx: number;
   gy: number;
   moving = false;
-  private sprite: Phaser.GameObjects.Sprite;
-  private key: string;
+  private avatar: Phaser.GameObjects.Image;
+  private bob: Phaser.Tweens.Tween;
   private toWorld: ToWorld;
-  private dir: Dir = 'down';
 
-  constructor(scene: Phaser.Scene, gx: number, gy: number, toWorld: ToWorld, key = 'char_0') {
+  constructor(scene: Phaser.Scene, gx: number, gy: number, toWorld: ToWorld) {
     const { x, y } = toWorld(gx, gy);
     super(scene, x, y);
     this.gx = gx;
     this.gy = gy;
     this.toWorld = toWorld;
-    this.key = key;
 
-    const ring = scene.add.image(0, 10, TEX_RING).setTint(0x2d6cdf).setAlpha(0.55);
+    // Marker ring on the floor under the player.
+    const ring = scene.add
+      .image(0, 6, TEX_RING)
+      .setOrigin(0.5, 0.5)
+      .setTint(0x2d6cdf)
+      .setAlpha(0.4);
     scene.tweens.add({
       targets: ring,
-      scale: { from: 0.85, to: 1.05 },
+      scale: { from: 0.92, to: 1.08 },
       duration: 1100,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.inOut',
     });
 
-    this.sprite = scene.add.sprite(0, 0, key, 1).setOrigin(0.5, 0.9).setScale(2);
+    this.avatar = scene.add.image(0, 0, CHAR_PLAYER).setOrigin(0.5, 0.92);
+
     const badge = this.makeBadge(scene);
 
-    this.add([ring, this.sprite, badge]);
+    this.add([ring, this.avatar, badge]);
     scene.add.existing(this);
-    this.setDepth(this.y);
-    this.sprite.play(`${key}-idle-down`);
+    this.setDepth(isoDepth(gx, gy, 5));
+
+    this.bob = scene.tweens.add({
+      targets: this.avatar,
+      y: -4,
+      scaleY: 0.94,
+      duration: 170,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+      paused: true,
+    });
   }
 
   private makeBadge(scene: Phaser.Scene): Phaser.GameObjects.Container {
@@ -50,19 +65,20 @@ export class Player extends Phaser.GameObjects.Container {
         fontStyle: 'bold',
       })
       .setOrigin(0.5);
-    const w = text.width + 20;
-    const h = 22;
+    const w = text.width + 22;
+    const hgt = 22;
     const bg = scene.add.graphics();
     bg.fillStyle(0x2d6cdf, 1);
-    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 11);
+    bg.fillRoundedRect(-w / 2, -hgt / 2, w, hgt, 11);
     bg.lineStyle(2, 0xffffff, 0.95);
-    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 11);
+    bg.strokeRoundedRect(-w / 2, -hgt / 2, w, hgt, 11);
     bg.fillStyle(0x2d6cdf, 1);
-    bg.fillTriangle(-5, h / 2 - 1, 5, h / 2 - 1, 0, h / 2 + 6);
-    const badge = scene.add.container(0, -64, [bg, text]);
+    bg.fillTriangle(-5, hgt / 2 - 1, 5, hgt / 2 - 1, 0, hgt / 2 + 6);
+
+    const badge = scene.add.container(0, -100, [bg, text]);
     scene.tweens.add({
       targets: badge,
-      y: -70,
+      y: -106,
       duration: 900,
       yoyo: true,
       repeat: -1,
@@ -71,18 +87,13 @@ export class Player extends Phaser.GameObjects.Container {
     return badge;
   }
 
-  private face(dx: number, dy: number): void {
-    if (Math.abs(dx) > Math.abs(dy)) {
-      this.dir = 'side';
-      this.sprite.setFlipX(dx < 0);
-    } else {
-      this.dir = dy < 0 ? 'up' : 'down';
-    }
-    this.sprite.play(`${this.key}-${this.dir}`, true);
+  private startWalk(): void {
+    if (!this.bob.isPlaying()) this.bob.restart();
   }
 
-  private idle(): void {
-    this.sprite.play(`${this.key}-idle-${this.dir}`, true);
+  private stopWalk(): void {
+    this.bob.pause();
+    this.avatar.setY(0).setScale(1, 1);
   }
 
   moveAlongPath(path: { gx: number; gy: number }[], onArrive: () => void): void {
@@ -91,20 +102,21 @@ export class Player extends Phaser.GameObjects.Container {
       return;
     }
     this.moving = true;
+    this.startWalk();
 
     const tweens = path.map((step) => {
       const { x, y } = this.toWorld(step.gx, step.gy);
       return {
         x,
         y,
-        duration: 200,
+        duration: 230,
         ease: 'Linear',
         onStart: () => {
-          this.face(x - this.x, y - this.y);
+          this.avatar.setFlipX(x < this.x);
           this.gx = step.gx;
           this.gy = step.gy;
+          this.setDepth(isoDepth(step.gx, step.gy, 5));
         },
-        onUpdate: () => this.setDepth(this.y),
       };
     });
 
@@ -113,7 +125,7 @@ export class Player extends Phaser.GameObjects.Container {
       tweens,
       onComplete: () => {
         this.moving = false;
-        this.idle();
+        this.stopWalk();
         onArrive();
       },
     });
