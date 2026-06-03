@@ -1658,3 +1658,188 @@ kbd {
   padding: 6px 14px;
   font-size: 13px;
 }
+
+/* ============================================================ HUD redesign */
+
+/* ---- GDPR clock: circular ring ---- */
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.timer-ring-wrap {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex: none;
+}
+.timer-ring {
+  width: 64px;
+  height: 64px;
+  display: block;
+}
+.timer-ring .ring-track {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 6;
+}
+.timer-ring .ring-prog {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.4s ease, stroke 0.3s ease;
+}
+.timer-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.timer-ring-center strong {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 19px;
+}
+.timer-ring-center strong small {
+  font-size: 11px;
+  opacity: 0.7;
+}
+.timer-ring-center span {
+  font-size: 10px;
+  color: var(--ink-soft);
+  margin-top: 1px;
+}
+.timer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.timer-label {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+.timer-sub {
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+.timer.green .ring-prog {
+  stroke: var(--good);
+}
+.timer.green .timer-ring-center strong {
+  color: var(--good);
+}
+.timer.amber .ring-prog {
+  stroke: var(--mid);
+}
+.timer.amber .timer-ring-center strong {
+  color: var(--mid);
+}
+.timer.red .ring-prog {
+  stroke: var(--bad);
+}
+.timer.red .timer-ring-center strong {
+  color: var(--bad);
+}
+.timer.red .timer-ring-wrap {
+  animation: clock-pulse 1s ease-in-out infinite;
+}
+@keyframes clock-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+/* ---- Stat meters: game-style HP bars ---- */
+.meter {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.meter-icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.meter-body {
+  flex: 1;
+  min-width: 0;
+}
+.meter-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.meter-num {
+  font-family: 'Baloo 2', sans-serif;
+  color: var(--ink);
+  font-size: 14px;
+}
+.meter-bar {
+  height: 12px;
+  background: #e9eef8;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 4px;
+  box-shadow: inset 0 1px 2px rgba(24, 38, 74, 0.12);
+}
+.meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: width 0.35s ease, background 0.3s ease;
+}
+.meter-fill.good {
+  background: linear-gradient(180deg, #46e09a 0%, #20a263 100%);
+}
+.meter-fill.mid {
+  background: linear-gradient(180deg, #f6c25c 0%, #e29a2e 100%);
+}
+.meter-fill.bad {
+  background: linear-gradient(180deg, #ff7a70 0%, #e2483f 100%);
+}
+
+/* ---- Score badge ---- */
+.score {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff6df 0%, #ffe7a8 100%);
+  border: 1px solid #efce80;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.score-ico {
+  font-size: 15px;
+}
+.score-val {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 21px;
+  font-weight: 800;
+  color: #5e4710;
+  line-height: 1;
+}
+.score-cap {
+  font-size: 11px;
+  font-weight: 800;
+  color: #9a7b30;
+  text-transform: uppercase;
+}

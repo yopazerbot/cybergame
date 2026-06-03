@@ -20,15 +20,16 @@ function Meter({
   const mid = invert ? value <= 70 : value >= 35;
   const tone = good ? 'good' : mid ? 'mid' : 'bad';
   return (
-    <div className="meter">
-      <div className="meter-head">
-        <span>
-          {icon} {label}
-        </span>
-        <span className="meter-num">{Math.round(value)}</span>
-      </div>
-      <div className="meter-bar">
-        <div className={`meter-fill ${tone}`} style={{ width: `${value}%` }} />
+    <div className={`meter ${tone}`}>
+      <span className="meter-icon">{icon}</span>
+      <div className="meter-body">
+        <div className="meter-head">
+          <span className="meter-label">{label}</span>
+          <span className="meter-num">{Math.round(value)}</span>
+        </div>
+        <div className="meter-bar">
+          <div className={`meter-fill ${tone}`} style={{ width: `${value}%` }} />
+        </div>
       </div>
     </div>
   );
@@ -56,7 +57,9 @@ export function Hud() {
       <div className="hud-right">
         <div className="phase-pill">Phase · {phaseLabel}</div>
         <div className="score">
-          Score <strong>{state.score}</strong>
+          <span className="score-ico">⭐</span>
+          <span className="score-val">{state.score}</span>
+          <span className="score-cap">pts</span>
         </div>
         <div className="hud-buttons">
           <button
