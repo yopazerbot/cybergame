@@ -4,8 +4,10 @@ import { gridToWorld, worldToGrid, isoDepth } from '../iso';
 import { findPath } from '../pathfinding';
 import { Player } from '../entities/Player';
 import { Npc } from '../entities/Npc';
+import { TEX_RING, TEX_TILE_HI, TEX_RUG } from '../TextureFactory';
 import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
+import { sfx } from '../../core/sfx';
 import { STAKEHOLDERS, STAKEHOLDER_BY_ID } from '../../scenario/stakeholders';
 import { nodeForStakeholder, stakeholderHasPending } from '../../scenario/scoring';
 import { advanceClock } from '../../scenario/scoring';
@@ -31,6 +33,7 @@ export class OfficeScene extends Phaser.Scene {
   private blocked = new Set<string>();
   private npcTiles = new Set<string>();
   private marker!: Phaser.GameObjects.Image;
+  private hover!: Phaser.GameObjects.Image;
   private toWorld = (gx: number, gy: number) => {
     const w = gridToWorld(gx, gy);
     return { x: w.x, y: w.y };
@@ -41,10 +44,9 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor('#aeb9d4');
-
     this.buildBlockedSet();
     this.drawFloor();
+    this.drawStationRugs();
     this.drawWallsAndFurniture();
     this.createMarker();
 
@@ -54,9 +56,12 @@ export class OfficeScene extends Phaser.Scene {
     // Player.
     this.player = new Player(this, START_TILE.gx, START_TILE.gy, this.toWorld);
 
-    // Center the camera on the board.
-    const center = this.toWorld((GRID_SIZE - 1) / 2, (GRID_SIZE - 1) / 2);
-    this.cameras.main.centerOn(center.x, center.y - 20);
+    // Frame the board and keep it framed on resize.
+    this.frameCamera();
+    this.scale.on('resize', this.frameCamera, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+      this.scale.off('resize', this.frameCamera, this),
+    );
 
     this.setupInput();
 
@@ -97,6 +102,38 @@ export class OfficeScene extends Phaser.Scene {
     }
   }
 
+  /** Colour-codes each stakeholder's "station" so areas read at a glance. */
+  private drawStationRugs(): void {
+    const c = (GRID_SIZE - 1) / 2;
+    for (const s of STAKEHOLDERS) {
+      const dirx = Math.sign(c - s.grid.gx);
+      const diry = Math.sign(c - s.grid.gy);
+      const tiles = [
+        { gx: s.grid.gx, gy: s.grid.gy },
+        { gx: s.grid.gx + dirx, gy: s.grid.gy },
+        { gx: s.grid.gx, gy: s.grid.gy + diry },
+      ];
+      for (const t of tiles) {
+        if (t.gx <= 0 || t.gy <= 0 || t.gx >= GRID_SIZE || t.gy >= GRID_SIZE) continue;
+        const { x, y } = this.toWorld(t.gx, t.gy);
+        this.add
+          .image(x, y, TEX_RUG)
+          .setOrigin(0.5, 0.5)
+          .setTint(s.colors.body)
+          .setAlpha(0.22)
+          .setDepth(isoDepth(t.gx, t.gy, -1));
+      }
+    }
+  }
+
+  private frameCamera(): void {
+    const cam = this.cameras.main;
+    const center = this.toWorld((GRID_SIZE - 1) / 2, (GRID_SIZE - 1) / 2);
+    const zoom = Phaser.Math.Clamp(Math.min(cam.width / 920, cam.height / 760), 0.6, 1.3);
+    cam.setZoom(zoom);
+    cam.centerOn(center.x, center.y - 10);
+  }
+
   private drawWallsAndFurniture(): void {
     // Back walls along gx=0 and gy=0.
     for (let i = 0; i < GRID_SIZE; i++) {
@@ -116,16 +153,49 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private createMarker(): void {
-    this.marker = this.add
-      .image(0, 0, 'floor_accent')
+    this.hover = this.add
+      .image(0, 0, TEX_TILE_HI)
       .setOrigin(0.5, 0.5)
-      .setAlpha(0.55)
       .setVisible(false)
-      .setDepth(isoDepth(0, 0, -1));
+      .setAlpha(0.9);
+    this.marker = this.add
+      .image(0, 0, TEX_RING)
+      .setOrigin(0.5, 0.5)
+      .setTint(0x2d6cdf)
+      .setAlpha(0.85)
+      .setVisible(false);
+    this.tweens.add({
+      targets: this.marker,
+      scale: { from: 0.85, to: 1.05 },
+      duration: 600,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+    });
   }
 
   // ---------------------------------------------------------------- input
   private setupInput(): void {
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      const state = store.getState();
+      if (state.gamePhase !== 'playing' || state.activeDialogue) {
+        this.hover.setVisible(false);
+        this.input.setDefaultCursor('default');
+        return;
+      }
+      const { gx, gy } = worldToGrid(p.worldX, p.worldY);
+      const npcId = this.npcAt(gx, gy);
+      const overNpc = npcId && this.isAdjacentToPlayer(STAKEHOLDER_BY_ID[npcId].grid);
+      if (overNpc || (this.isWalkable(gx, gy) && !this.player.moving)) {
+        const { x, y } = this.toWorld(gx, gy);
+        this.hover.setPosition(x, y).setDepth(isoDepth(gx, gy, 0)).setVisible(true);
+        this.input.setDefaultCursor('pointer');
+      } else {
+        this.hover.setVisible(false);
+        this.input.setDefaultCursor('default');
+      }
+    });
+
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       const state = store.getState();
       if (state.gamePhase !== 'playing' || state.activeDialogue || this.player.moving) return;
@@ -146,8 +216,10 @@ export class OfficeScene extends Phaser.Scene {
       const target = this.toWorld(gx, gy);
       this.marker
         .setPosition(target.x, target.y)
-        .setDepth(isoDepth(gx, gy, -1))
+        .setDepth(isoDepth(gx, gy, 0))
         .setVisible(true);
+      this.hover.setVisible(false);
+      sfx.walk();
 
       this.player.moveAlongPath(path, () => {
         this.marker.setVisible(false);
@@ -193,6 +265,7 @@ export class OfficeScene extends Phaser.Scene {
   private openDialogue(npcId: Role): void {
     const state = store.getState();
     if (state.activeDialogue) return;
+    sfx.talk();
     store.setState({ ...state, activeDialogue: { npcId } });
   }
 

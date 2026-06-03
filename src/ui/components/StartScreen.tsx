@@ -26,13 +26,35 @@ export function StartScreen() {
           ))}
         </div>
 
-        <p className="hint">
-          🖱️ Click the floor to walk · stand next to a colleague and press <kbd>Space</kbd> (or
-          click them) to talk · ⏱️ you have <strong>72 hours</strong>.
-        </p>
+        <div className="howto">
+          <div className="howto-step">
+            <span className="howto-ico">🖱️</span>
+            <span>
+              <strong>Click the floor</strong> to walk your avatar around the office.
+            </span>
+          </div>
+          <div className="howto-step">
+            <span className="howto-ico">💬</span>
+            <span>
+              Walk up to a colleague and press <kbd>Space</kbd> (or click them) to talk and decide.
+            </span>
+          </div>
+          <div className="howto-step">
+            <span className="howto-ico">✨</span>
+            <span>
+              <strong>Glowing rings</strong> mark who needs you next. The checklist tracks progress.
+            </span>
+          </div>
+          <div className="howto-step">
+            <span className="howto-ico">⏱️</span>
+            <span>
+              You have <strong>72 hours</strong> — deliberation and wrong turns burn the clock.
+            </span>
+          </div>
+        </div>
 
         <button className="btn primary big" onClick={start}>
-          Start the incident
+          ▶ Start the incident
         </button>
       </div>
     </div>

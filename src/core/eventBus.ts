@@ -14,6 +14,8 @@ export interface EventMap {
   stateChanged: void;
   /** Restart requested from the debrief screen. */
   restart: void;
+  /** Transient on-screen toast (meter changes, phase changes). */
+  notify: { text: string; tone: 'good' | 'bad' | 'info' };
 }
 
 type Handler<K extends keyof EventMap> = (payload: EventMap[K]) => void;

@@ -22,7 +22,7 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: #aeb9d4;
+  background: radial-gradient(circle at 50% 30%, #c3cde6 0%, #9fa9c8 55%, #8a93b4 100%);
   color: var(--ink);
 }
 #game-root,
@@ -642,7 +642,124 @@ kbd {
   margin: 18px 0;
 }
 
+/* ---------- how-to (start screen) ---------- */
+.howto {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  text-align: left;
+  margin: 6px 0 20px;
+}
+.howto-step {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+.howto-step strong {
+  color: var(--ink);
+}
+.howto-ico {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+/* ---------- mute button ---------- */
+.mute-btn {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px 8px;
+  font-size: 15px;
+  cursor: pointer;
+  align-self: flex-end;
+}
+.mute-btn:hover {
+  background: #fff;
+}
+
+/* ---------- controls legend ---------- */
+.controls-legend {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  box-shadow: var(--shadow);
+  max-width: 230px;
+}
+.controls-legend kbd {
+  font-size: 11px;
+}
+.legend-hint {
+  color: var(--brand-dk);
+  font-weight: 700;
+}
+
+/* ---------- toasts ---------- */
+.toasts {
+  position: absolute;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+.toast {
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff;
+  padding: 9px 18px;
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  animation: toastIn 0.25s ease, toastOut 0.4s ease 2.2s forwards;
+}
+.toast.good {
+  background: linear-gradient(135deg, #21a366, #178a52);
+}
+.toast.bad {
+  background: linear-gradient(135deg, #e8554e, #c23a34);
+}
+.toast.info {
+  background: linear-gradient(135deg, #2d6cdf, #1b4fb0);
+}
+@keyframes toastIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+@keyframes toastOut {
+  to {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+
 @media (max-width: 560px) {
+  .howto {
+    grid-template-columns: 1fr;
+  }
+  .controls-legend {
+    display: none;
+  }
   .roles {
     grid-template-columns: 1fr;
   }

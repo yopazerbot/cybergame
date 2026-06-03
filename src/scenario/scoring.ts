@@ -1,6 +1,8 @@
 import type { GameState, Phase, Role, Ending } from '../core/types';
 import { SCORE_WEIGHTS } from '../core/config';
 import { store } from '../core/store';
+import { eventBus } from '../core/eventBus';
+import { sfx } from '../core/sfx';
 import { NODES, NODE_BY_ID, PHASE_ORDER, type DecisionNode } from './scenario';
 
 // Pure-ish resolver: the only place that turns a player choice into new state.
@@ -111,11 +113,14 @@ export function computeEnding(state: GameState): Ending {
 }
 
 function endGame(state: GameState): void {
+  const ending = computeEnding(state);
+  if (ending.tone === 'good') sfx.win();
+  else sfx.lose();
   store.setState({
     ...state,
     score: computeScore(state),
     gamePhase: 'ended',
-    ending: computeEnding(state),
+    ending,
     activeDialogue: null,
     npcInRange: null,
   });
@@ -144,9 +149,8 @@ export function resolveChoice(nodeId: string, choiceId: string): void {
   };
 
   let phase = state.phase;
-  if (e.advancePhaseTo && phaseIdx(e.advancePhaseTo) > phaseIdx(phase)) {
-    phase = e.advancePhaseTo;
-  }
+  const phaseAdvanced = e.advancePhaseTo && phaseIdx(e.advancePhaseTo) > phaseIdx(phase);
+  if (phaseAdvanced) phase = e.advancePhaseTo!;
 
   const resolvedNodes = node.oneShot
     ? [...state.resolvedNodes, nodeId]
@@ -163,6 +167,15 @@ export function resolveChoice(nodeId: string, choiceId: string): void {
   };
   next.score = computeScore(next);
 
+  // Audio + toast feedback on the choice quality.
+  const net = (e.compliance ?? 0) + (e.reputation ?? 0);
+  if (net >= 0) sfx.good();
+  else sfx.bad();
+  emitChoiceToast(e);
+  if (phaseAdvanced) {
+    eventBus.emit('notify', { text: `Phase: ${capitalize(phase)}`, tone: 'info' });
+  }
+
   // End conditions.
   const deadlineMissed = next.clock.hoursElapsed >= next.clock.deadlineHours && !flags.regulatorNotified;
   const finished = nodeId === 'mgmt_remediation' || !anyNodesLeft(next);
@@ -172,6 +185,17 @@ export function resolveChoice(nodeId: string, choiceId: string): void {
   } else {
     store.setState(next);
   }
+}
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+function emitChoiceToast(e: { compliance?: number; reputation?: number }): void {
+  const parts: string[] = [];
+  if (e.compliance) parts.push(`${e.compliance > 0 ? '+' : ''}${e.compliance} Compliance`);
+  if (e.reputation) parts.push(`${e.reputation > 0 ? '+' : ''}${e.reputation} Reputation`);
+  if (parts.length === 0) return;
+  const tone = (e.compliance ?? 0) + (e.reputation ?? 0) >= 0 ? 'good' : 'bad';
+  eventBus.emit('notify', { text: parts.join('  ·  '), tone });
 }
 
 /** Advance the game-time clock (called by the world's passive ticker). */

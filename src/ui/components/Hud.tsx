@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useStore } from '../useStore';
 import { Timer } from './Timer';
+import { sfx } from '../../core/sfx';
 
 function Meter({
   label,
@@ -33,7 +35,14 @@ function Meter({
 
 export function Hud() {
   const state = useStore();
+  const [muted, setMuted] = useState(sfx.isMuted());
   const phaseLabel = state.phase.charAt(0).toUpperCase() + state.phase.slice(1);
+
+  const toggleMute = () => {
+    const next = !muted;
+    sfx.setMuted(next);
+    setMuted(next);
+  };
 
   return (
     <div className="hud">
@@ -48,6 +57,9 @@ export function Hud() {
         <div className="score">
           Score <strong>{state.score}</strong>
         </div>
+        <button className="mute-btn" onClick={toggleMute} title="Toggle sound">
+          {muted ? '🔇' : '🔊'}
+        </button>
       </div>
     </div>
   );
