@@ -21,7 +21,7 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'IT / SOC Analyst',
     emoji: '🧑‍💻',
     colors: { body: 0x3aa6b9, accent: 0x123c43 },
-    grid: { gx: 2, gy: 2 },
+    grid: { gx: 3, gy: 2 },
     blurb: 'Runs the SOC. Lives in the SIEM, EDR console and packet captures.',
   },
   {
@@ -30,7 +30,7 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'CISO',
     emoji: '🛡️',
     colors: { body: 0x6c5ce7, accent: 0x2d2466 },
-    grid: { gx: 2, gy: 9 },
+    grid: { gx: 2, gy: 7 },
     blurb: 'Owns the incident response plan and the risk call.',
   },
   {
@@ -39,7 +39,7 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'Data Protection Officer',
     emoji: '⚖️',
     colors: { body: 0x00b894, accent: 0x0a5e4a },
-    grid: { gx: 9, gy: 2 },
+    grid: { gx: 7, gy: 2 },
     blurb: 'Decides if this is a notifiable personal-data breach under the GDPR.',
   },
   {
@@ -48,7 +48,7 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'CEO / Management',
     emoji: '👔',
     colors: { body: 0xe17055, accent: 0x6e2f22 },
-    grid: { gx: 9, gy: 9 },
+    grid: { gx: 9, gy: 7 },
     blurb: 'Signs off on disclosure, budget and external messaging.',
   },
   {
@@ -57,7 +57,7 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'Supervisory Authority',
     emoji: '🏛️',
     colors: { body: 0x636e72, accent: 0x2d3436 },
-    grid: { gx: 5, gy: 11 },
+    grid: { gx: 10, gy: 9 },
     blurb: 'The data protection authority. Expects an Art. 33 notification within 72h.',
   },
   {
@@ -66,7 +66,7 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'Affected Customer',
     emoji: '🙍',
     colors: { body: 0xfdcb6e, accent: 0x8a6d1f },
-    grid: { gx: 11, gy: 5 },
+    grid: { gx: 3, gy: 9 },
     blurb: 'One of the data subjects whose records were in the exposed table.',
   },
 ];

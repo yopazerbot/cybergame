@@ -266,6 +266,31 @@ export function generateTextures(scene: Phaser.Scene): void {
       true,
     );
   });
+  // Low interior partition (half-height) so the camera sees over it into back rooms.
+  makeBox(scene, 'wall_low', 24, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g, h) => {
+    const band = (left: boolean, off: number, depth: number) =>
+      left
+        ? [
+            { x: 0, y: TILE_H / 2 + off },
+            { x: TILE_W / 2, y: TILE_H + off },
+            { x: TILE_W / 2, y: TILE_H + off + depth },
+            { x: 0, y: TILE_H / 2 + off + depth },
+          ]
+        : [
+            { x: TILE_W, y: TILE_H / 2 + off },
+            { x: TILE_W / 2, y: TILE_H + off },
+            { x: TILE_W / 2, y: TILE_H + off + depth },
+            { x: TILE_W, y: TILE_H / 2 + off + depth },
+          ];
+    // Bright top trim.
+    g.fillStyle(0xffffff, 0.24);
+    g.fillPoints(band(true, 0, 5), true);
+    g.fillPoints(band(false, 0, 5), true);
+    // Skirting.
+    g.fillStyle(0x000000, 0.16);
+    g.fillPoints(band(true, h - 6, 6), true);
+    g.fillPoints(band(false, h - 6, 6), true);
+  });
   // Desk with a monitor.
   makeBox(scene, 'desk', 16, 0x9a7a5b, 0x7a5f47, 0x624c39, (g) => {
     g.fillStyle(0x2b3242, 1);

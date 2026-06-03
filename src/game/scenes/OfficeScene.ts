@@ -13,23 +13,55 @@ import { nodeForStakeholder, stakeholderHasPending } from '../../scenario/scorin
 import { advanceClock } from '../../scenario/scoring';
 import type { Role } from '../../core/types';
 
-// Decorative / blocking furniture: tile -> texture key.
+// Decorative / blocking furniture: tile -> texture key. Grouped by themed room.
+// Tiles are validated reachable (no prop seals a room or blocks a doorway).
 const FURNITURE: { gx: number; gy: number; key: string }[] = [
-  { gx: 5, gy: 5, key: 'desk' },
-  { gx: 6, gy: 5, key: 'desk' },
-  { gx: 3, gy: 1, key: 'server' },
+  // SOC / Tech (top-left)
+  { gx: 1, gy: 1, key: 'server' },
   { gx: 4, gy: 1, key: 'server' },
+  { gx: 1, gy: 3, key: 'desk' },
+  { gx: 4, gy: 3, key: 'desk' },
+  // DPO records (top-right)
   { gx: 8, gy: 1, key: 'cabinet' },
-  { gx: 10, gy: 1, key: 'cooler' },
-  { gx: 1, gy: 11, key: 'plant' },
-  { gx: 11, gy: 11, key: 'plant' },
+  { gx: 9, gy: 1, key: 'cabinet' },
+  { gx: 10, gy: 1, key: 'cabinet' },
+  { gx: 9, gy: 3, key: 'desk' },
+  { gx: 8, gy: 4, key: 'plant' },
+  // CISO office (bottom-left)
+  { gx: 3, gy: 6, key: 'desk' },
+  { gx: 4, gy: 7, key: 'cabinet' },
   { gx: 1, gy: 6, key: 'plant' },
+  // Boardroom (bottom-right)
+  { gx: 6, gy: 6, key: 'desk' },
+  { gx: 7, gy: 6, key: 'desk' },
+  { gx: 10, gy: 6, key: 'plant' },
+  // Reception / Lounge (front-left)
+  { gx: 1, gy: 9, key: 'cooler' },
   { gx: 1, gy: 8, key: 'plant' },
-  { gx: 11, gy: 9, key: 'plant' },
+  { gx: 1, gy: 11, key: 'plant' },
+  // Regulator desk (front-right)
+  { gx: 8, gy: 9, key: 'desk' },
+  { gx: 11, gy: 9, key: 'cabinet' },
+  { gx: 11, gy: 8, key: 'plant' },
+  { gx: 11, gy: 11, key: 'plant' },
 ];
 
-const ACCENT_TILES = new Set(['5,6', '6,6', '5,7', '6,7']);
-const START_TILE = { gx: 7, gy: 7 };
+// Interior divider walls (half-height) carving the floor into six themed rooms.
+// Doorway gaps at (5,4) [SOC↔DPO] and (4,5) [SOC↔CISO]; the open front strip
+// (gy ≥ 8) links the two lower rooms via the lounge.
+const INTERIOR_WALLS = new Set([
+  '5,1', '5,2', '5,3', '5,5', '5,6', '5,7', // vertical spine gx=5 (gap at 5,4)
+  '1,5', '2,5', '3,5', '6,5', '7,5', '8,5', '9,5', '10,5', // horizontal spine gy=5 (gap at 4,5)
+]);
+
+const START_TILE = { gx: 5, gy: 9 };
+
+// Soft per-zone floor tint so each room reads as its own space at a glance.
+function zoneTint(gx: number, gy: number): number | null {
+  if (gy <= 4) return gx <= 4 ? 0xcfe0ff : gx >= 6 ? 0xcdeede : null; // SOC / DPO
+  if (gy <= 7) return gx <= 4 ? 0xe2d8f6 : gx >= 6 ? 0xf2e3c8 : null; // CISO / Boardroom
+  return gx <= 5 ? 0xf4ecd9 : 0xd9e0ec; // Lounge / Regulator (front strip)
+}
 
 export class OfficeScene extends Phaser.Scene {
   private player!: Player;
@@ -49,6 +81,7 @@ export class OfficeScene extends Phaser.Scene {
 
   create(): void {
     this.buildBlockedSet();
+    this.assertConnectivity();
     this.drawFloor();
     this.drawStationRugs();
     this.drawWallsAndFurniture();
@@ -82,8 +115,32 @@ export class OfficeScene extends Phaser.Scene {
     for (const f of FURNITURE) this.blocked.add(`${f.gx},${f.gy}`);
   }
 
+  /** Dev guard: every stakeholder must have a walkable neighbour reachable from START. */
+  private assertConnectivity(): void {
+    const seen = new Set<string>([`${START_TILE.gx},${START_TILE.gy}`]);
+    const queue = [START_TILE];
+    while (queue.length) {
+      const { gx, gy } = queue.shift()!;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = gx + dx;
+        const ny = gy + dy;
+        const k = `${nx},${ny}`;
+        if (this.isWalkable(nx, ny) && !seen.has(k)) {
+          seen.add(k);
+          queue.push({ gx: nx, gy: ny });
+        }
+      }
+    }
+    for (const s of STAKEHOLDERS) {
+      const reachable = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) =>
+        seen.has(`${s.grid.gx + dx},${s.grid.gy + dy}`),
+      );
+      if (!reachable) console.warn(`[connectivity] ${s.id} at ${s.grid.gx},${s.grid.gy} is unreachable`);
+    }
+  }
+
   private isWall(gx: number, gy: number): boolean {
-    return gx === 0 || gy === 0;
+    return gx === 0 || gy === 0 || INTERIOR_WALLS.has(`${gx},${gy}`);
   }
 
   private isWalkable = (gx: number, gy: number): boolean => {
@@ -99,9 +156,10 @@ export class OfficeScene extends Phaser.Scene {
       for (let gy = 0; gy < GRID_SIZE; gy++) {
         if (this.isWall(gx, gy)) continue;
         const { x, y } = this.toWorld(gx, gy);
-        let key = (gx + gy) % 2 === 0 ? 'floor_a' : 'floor_b';
-        if (ACCENT_TILES.has(`${gx},${gy}`)) key = 'floor_accent';
-        addArt(this, x, y, key).setOrigin(0.5, 0.5).setDepth(isoDepth(gx, gy, -2));
+        const key = (gx + gy) % 2 === 0 ? 'floor_a' : 'floor_b';
+        const tile = addArt(this, x, y, key).setOrigin(0.5, 0.5).setDepth(isoDepth(gx, gy, -2));
+        const tint = zoneTint(gx, gy);
+        if (tint !== null) tile.setTint(tint);
       }
     }
   }
@@ -149,6 +207,11 @@ export class OfficeScene extends Phaser.Scene {
     for (let i = 0; i < GRID_SIZE; i++) {
       this.placeBox(0, i, 'wall');
       this.placeBox(i, 0, 'wall');
+    }
+    // Interior partitions dividing the rooms (half-height so back rooms stay visible).
+    for (const key of INTERIOR_WALLS) {
+      const [gx, gy] = key.split(',').map(Number);
+      this.placeBox(gx, gy, 'wall_low');
     }
     for (const f of FURNITURE) {
       const { x, y } = this.toWorld(f.gx, f.gy);
