@@ -8,6 +8,9 @@ export function ControlsLegend() {
       <span>
         <kbd>Space</kbd> / click a colleague to talk
       </span>
+      <span>
+        <kbd>✋</kbd> Drag to pan · scroll to zoom
+      </span>
       <span className="legend-hint">Follow 👉 the glowing rings ✨</span>
     </div>
   );

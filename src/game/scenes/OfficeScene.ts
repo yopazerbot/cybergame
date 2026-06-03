@@ -92,6 +92,9 @@ export class OfficeScene extends Phaser.Scene {
   private marker!: Phaser.GameObjects.Image;
   private hover!: Phaser.GameObjects.Image;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
+  private dragging = false;
+  private downAt = { x: 0, y: 0 };
+  private panLast = { x: 0, y: 0 };
   private builtMode: Mode = 'defender';
   private darkOverlay?: Phaser.GameObjects.Rectangle;
   private glow?: Phaser.GameObjects.Image;
@@ -426,7 +429,27 @@ export class OfficeScene extends Phaser.Scene {
   private setupInput(): void {
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
       const state = store.getState();
-      if (state.gamePhase !== 'playing' || state.activeDialogue || state.activeInject) {
+      const active =
+        state.gamePhase === 'playing' && !state.activeDialogue && !state.activeInject;
+
+      // Click-hold and drag to pan the world in any direction.
+      if (p.isDown && active) {
+        const dx = p.x - this.panLast.x;
+        const dy = p.y - this.panLast.y;
+        this.panLast.x = p.x;
+        this.panLast.y = p.y;
+        if (Math.hypot(p.x - this.downAt.x, p.y - this.downAt.y) > 6) this.dragging = true;
+        if (this.dragging) {
+          const cam = this.cameras.main;
+          cam.scrollX -= dx / cam.zoom;
+          cam.scrollY -= dy / cam.zoom;
+          this.hover.setVisible(false);
+          this.input.setDefaultCursor('grabbing');
+          return;
+        }
+      }
+
+      if (!active) {
         this.hover.setVisible(false);
         this.input.setDefaultCursor('default');
         return;
@@ -444,38 +467,24 @@ export class OfficeScene extends Phaser.Scene {
       }
     });
 
+    // Press starts a potential drag; a real tap is resolved on release.
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
-      const state = store.getState();
-      if (state.gamePhase !== 'playing' || state.activeDialogue || state.activeInject || this.player.moving)
-        return;
+      this.dragging = false;
+      this.downAt.x = p.x;
+      this.downAt.y = p.y;
+      this.panLast.x = p.x;
+      this.panLast.y = p.y;
+    });
 
-      const { gx, gy } = worldToGrid(p.worldX, p.worldY);
-
-      // Clicking an NPC (or its tile) while adjacent opens dialogue.
-      const npcId = this.npcAt(gx, gy);
-      if (npcId && this.isAdjacentToPlayer(STAKEHOLDER_BY_ID[npcId].grid)) {
-        eventBus.emit('requestDialogue', { npcId });
-        return;
-      }
-
-      if (!this.isWalkable(gx, gy)) return;
-      const path = findPath({ gx: this.player.gx, gy: this.player.gy }, { gx, gy }, this.isWalkable);
-      if (!path) return;
-
-      const target = this.toWorld(gx, gy);
-      this.marker
-        .setPosition(target.x, target.y)
-        .setDepth(isoDepth(gx, gy, 0))
-        .setVisible(true);
-      this.spawnRipple(target.x, target.y);
-      this.hover.setVisible(false);
-      sfx.walk();
-
-      this.player.moveAlongPath(path, () => {
-        this.marker.setVisible(false);
-        eventBus.emit('playerArrived', { gx: this.player.gx, gy: this.player.gy });
-        this.updateNpcInRange();
-      });
+    this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
+      const wasDragging = this.dragging;
+      this.dragging = false;
+      this.input.setDefaultCursor('default');
+      if (!wasDragging) this.handleTap(p);
+    });
+    this.input.on('pointerupoutside', () => {
+      this.dragging = false;
+      this.input.setDefaultCursor('default');
     });
 
     // Space talks to an adjacent NPC.
@@ -493,6 +502,41 @@ export class OfficeScene extends Phaser.Scene {
 
     // Arrow keys walk the avatar one tile in a screen direction.
     this.cursors = this.input.keyboard?.createCursorKeys();
+  }
+
+  // A genuine tap (not a drag-pan): walk there, or talk to an adjacent NPC.
+  private handleTap(p: Phaser.Input.Pointer): void {
+    const state = store.getState();
+    if (
+      state.gamePhase !== 'playing' ||
+      state.activeDialogue ||
+      state.activeInject ||
+      this.player.moving
+    )
+      return;
+
+    const { gx, gy } = worldToGrid(p.worldX, p.worldY);
+    const npcId = this.npcAt(gx, gy);
+    if (npcId && this.isAdjacentToPlayer(STAKEHOLDER_BY_ID[npcId].grid)) {
+      eventBus.emit('requestDialogue', { npcId });
+      return;
+    }
+
+    if (!this.isWalkable(gx, gy)) return;
+    const path = findPath({ gx: this.player.gx, gy: this.player.gy }, { gx, gy }, this.isWalkable);
+    if (!path) return;
+
+    const target = this.toWorld(gx, gy);
+    this.marker.setPosition(target.x, target.y).setDepth(isoDepth(gx, gy, 0)).setVisible(true);
+    this.spawnRipple(target.x, target.y);
+    this.hover.setVisible(false);
+    sfx.walk();
+
+    this.player.moveAlongPath(path, () => {
+      this.marker.setVisible(false);
+      eventBus.emit('playerArrived', { gx: this.player.gx, gy: this.player.gy });
+      this.updateNpcInRange();
+    });
   }
 
   // Move one tile per step in the pressed screen direction (iso diagonal in grid
