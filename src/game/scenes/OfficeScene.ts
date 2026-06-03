@@ -4,7 +4,7 @@ import { gridToWorld, worldToGrid, isoDepth } from '../iso';
 import { findPath } from '../pathfinding';
 import { Player } from '../entities/Player';
 import { Npc } from '../entities/Npc';
-import { TEX_RING, TEX_TILE_HI, TEX_RUG } from '../TextureFactory';
+import { TEX_RING, TEX_TILE_HI, TEX_RUG, TEX_SHADOW } from '../TextureFactory';
 import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
 import { sfx } from '../../core/sfx';
@@ -140,7 +140,11 @@ export class OfficeScene extends Phaser.Scene {
       this.placeBox(0, i, 'wall');
       this.placeBox(i, 0, 'wall');
     }
-    for (const f of FURNITURE) this.placeBox(f.gx, f.gy, f.key);
+    for (const f of FURNITURE) {
+      const { x, y } = this.toWorld(f.gx, f.gy);
+      this.add.image(x, y, TEX_SHADOW).setOrigin(0.5, 0.5).setDepth(isoDepth(f.gx, f.gy, 0));
+      this.placeBox(f.gx, f.gy, f.key);
+    }
   }
 
   private placeBox(gx: number, gy: number, key: string): void {

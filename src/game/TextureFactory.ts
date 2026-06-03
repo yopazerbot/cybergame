@@ -106,51 +106,89 @@ function makeBox(
   g.destroy();
 }
 
-/** A friendly little character: shadow, legs, body, arms, head with hair + eyes. */
+/** A friendly, more detailed character: shadow, shoes, shaded body, arms, head with face. */
 function makeCharacter(scene: Phaser.Scene, key: string, body: number, accent: number): void {
-  const w = 48;
-  const h = 72;
+  const w = 52;
+  const h = 78;
   const cx = w / 2;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  const darker = Phaser.Display.Color.IntegerToColor(body).darken(18).color;
+  const dark = Phaser.Display.Color.IntegerToColor(body).darken(22).color;
+  const light = Phaser.Display.Color.IntegerToColor(body).lighten(16).color;
+  const hairDark = Phaser.Display.Color.IntegerToColor(accent).darken(12).color;
 
   // Drop shadow.
-  g.fillStyle(0x16203a, 0.18);
-  g.fillEllipse(cx, h - 5, 32, 11);
+  g.fillStyle(0x16203a, 0.2);
+  g.fillEllipse(cx, h - 4, 34, 11);
 
-  // Legs.
-  g.fillStyle(accent, 1);
-  g.fillRoundedRect(cx - 11, 50, 9, 16, 4);
-  g.fillRoundedRect(cx + 2, 50, 9, 16, 4);
+  // Legs + shoes.
+  g.fillStyle(0x3a4055, 1);
+  g.fillRoundedRect(cx - 11, 52, 9, 15, 4);
+  g.fillRoundedRect(cx + 2, 52, 9, 15, 4);
+  g.fillStyle(0x20242f, 1);
+  g.fillRoundedRect(cx - 12, 63, 11, 6, 3);
+  g.fillRoundedRect(cx + 1, 63, 11, 6, 3);
 
-  // Arms (behind body edges).
-  g.fillStyle(darker, 1);
-  g.fillRoundedRect(cx - 18, 30, 8, 22, 4);
-  g.fillRoundedRect(cx + 10, 30, 8, 22, 4);
+  // Arms.
+  g.fillStyle(dark, 1);
+  g.fillRoundedRect(cx - 19, 30, 8, 23, 4);
+  g.fillRoundedRect(cx + 11, 30, 8, 23, 4);
+  g.fillStyle(0xffe0bd, 1); // hands
+  g.fillCircle(cx - 15, 52, 3.5);
+  g.fillCircle(cx + 15, 52, 3.5);
 
-  // Body.
+  // Body with shading.
   g.fillStyle(body, 1);
-  g.fillRoundedRect(cx - 14, 26, 28, 30, 11);
-  // Accent stripe.
+  g.fillRoundedRect(cx - 15, 26, 30, 31, 12);
+  g.fillStyle(light, 0.5); // top-left light
+  g.fillRoundedRect(cx - 15, 26, 30, 13, 12);
+  g.fillStyle(dark, 0.55); // bottom shade
+  g.fillRoundedRect(cx - 15, 48, 30, 9, 8);
+  // Collar V.
   g.fillStyle(accent, 1);
-  g.fillRoundedRect(cx - 14, 43, 28, 7, 4);
-  // Body shading.
-  g.fillStyle(darker, 0.5);
-  g.fillRoundedRect(cx - 14, 50, 28, 6, 4);
+  g.fillTriangle(cx - 6, 27, cx + 6, 27, cx, 38);
+  g.fillStyle(0xffe0bd, 1);
+  g.fillTriangle(cx - 3, 27, cx + 3, 27, cx, 33);
+  // Body outline.
+  g.lineStyle(1.5, 0x222a3d, 0.18);
+  g.strokeRoundedRect(cx - 15, 26, 30, 31, 12);
 
   // Head.
   g.fillStyle(0xffe0bd, 1);
-  g.fillCircle(cx, 17, 12);
+  g.fillCircle(cx, 16, 12.5);
+  g.lineStyle(1.5, 0x222a3d, 0.16);
+  g.strokeCircle(cx, 16, 12.5);
+  // Ears.
+  g.fillStyle(0xf2cda6, 1);
+  g.fillCircle(cx - 12, 17, 2.4);
+  g.fillCircle(cx + 12, 17, 2.4);
   // Hair.
   g.fillStyle(accent, 1);
-  g.fillRoundedRect(cx - 12, 5, 24, 10, 6);
-  g.fillRect(cx - 12, 12, 24, 2);
+  g.fillRoundedRect(cx - 13, 3, 26, 11, 6);
+  g.fillStyle(hairDark, 1);
+  g.fillRect(cx - 13, 11, 26, 2);
+  g.fillCircle(cx - 9, 6, 4);
+  g.fillCircle(cx, 4, 5);
+  g.fillCircle(cx + 9, 6, 4);
   // Eyes.
   g.fillStyle(0x2a2f44, 1);
-  g.fillCircle(cx - 4, 18, 1.7);
-  g.fillCircle(cx + 4, 18, 1.7);
+  g.fillCircle(cx - 4.5, 17, 1.8);
+  g.fillCircle(cx + 4.5, 17, 1.8);
+  // Smile.
+  g.lineStyle(1.4, 0xb07a4e, 1);
+  g.beginPath();
+  g.arc(cx, 19, 4, 0.18 * Math.PI, 0.82 * Math.PI, false);
+  g.strokePath();
 
   g.generateTexture(key, w, h);
+  g.destroy();
+}
+
+/** Soft contact shadow blob for furniture. */
+function makeShadow(scene: Phaser.Scene, key: string): void {
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+  g.fillStyle(0x16203a, 0.16);
+  g.fillEllipse(TILE_W / 2, TILE_H / 2, TILE_W * 0.7, TILE_H * 0.62);
+  g.generateTexture(key, TILE_W, TILE_H);
   g.destroy();
 }
 
@@ -158,6 +196,7 @@ export const CHAR_PLAYER = 'char_player';
 export const TEX_RUG = 'rug';
 export const TEX_RING = 'ring';
 export const TEX_TILE_HI = 'tile_hi';
+export const TEX_SHADOW = 'shadow';
 
 export function generateTextures(scene: Phaser.Scene): void {
   makeFloor(scene, 'floor_a', FLOOR_A);
@@ -166,6 +205,7 @@ export function generateTextures(scene: Phaser.Scene): void {
   makeDiamond(scene, TEX_RUG);
   makeDiamond(scene, TEX_RING, true);
   makeTileHighlight(scene, TEX_TILE_HI);
+  makeShadow(scene, TEX_SHADOW);
 
   // Wall with a soft top trim + light strips on the visible faces.
   makeBox(scene, 'wall', 42, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g) => {

@@ -32,10 +32,21 @@ body {
   width: 100% !important;
   height: 100% !important;
 }
+/* Soft lighting vignette: above the canvas, below the UI. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 44%, transparent 42%, rgba(18, 26, 48, 0.3) 100%);
+}
 #ui-root {
   position: fixed;
   inset: 0;
   z-index: 10;
+  /* CRITICAL: let clicks fall through to the Phaser canvas; widgets re-enable below. */
+  pointer-events: none;
 }
 
 /* The overlay layer is click-through; only interactive widgets opt back in. */
