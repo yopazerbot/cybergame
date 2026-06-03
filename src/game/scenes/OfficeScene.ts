@@ -29,9 +29,11 @@ const FURNITURE: { gx: number; gy: number; key: string }[] = [
   // SOC / Tech (top-left)
   { gx: 1, gy: 1, key: 'server' },
   { gx: 4, gy: 1, key: 'server' },
+  { gx: 1, gy: 2, key: 'whiteboard' },
   { gx: 1, gy: 3, key: 'desk' },
   { gx: 4, gy: 3, key: 'desk' },
   // DPO records (top-right)
+  { gx: 6, gy: 1, key: 'bookshelf' },
   { gx: 8, gy: 1, key: 'cabinet' },
   { gx: 9, gy: 1, key: 'cabinet' },
   { gx: 10, gy: 1, key: 'cabinet' },
@@ -41,19 +43,28 @@ const FURNITURE: { gx: number; gy: number; key: string }[] = [
   { gx: 3, gy: 6, key: 'desk' },
   { gx: 4, gy: 7, key: 'cabinet' },
   { gx: 1, gy: 6, key: 'plant' },
-  // Boardroom (bottom-right)
-  { gx: 6, gy: 6, key: 'desk' },
-  { gx: 7, gy: 6, key: 'desk' },
+  { gx: 1, gy: 7, key: 'bookshelf' },
+  // Boardroom (bottom-right) — a long table with chairs
+  { gx: 6, gy: 6, key: 'boardroom_table_l' },
+  { gx: 7, gy: 6, key: 'boardroom_table_r' },
+  { gx: 7, gy: 7, key: 'chair' },
+  { gx: 8, gy: 7, key: 'chair' },
+  { gx: 9, gy: 6, key: 'chair' },
   { gx: 10, gy: 6, key: 'plant' },
   // Reception / Lounge (front-left)
-  { gx: 1, gy: 9, key: 'cooler' },
+  { gx: 1, gy: 9, key: 'reception_desk' },
+  { gx: 1, gy: 10, key: 'sofa' },
+  { gx: 2, gy: 10, key: 'coffee_table' },
   { gx: 1, gy: 8, key: 'plant' },
   { gx: 1, gy: 11, key: 'plant' },
+  { gx: 5, gy: 11, key: 'cooler' },
   // Regulator desk (front-right)
   { gx: 8, gy: 9, key: 'desk' },
+  { gx: 8, gy: 10, key: 'chair' },
   { gx: 11, gy: 9, key: 'cabinet' },
   { gx: 11, gy: 8, key: 'plant' },
   { gx: 11, gy: 11, key: 'plant' },
+  { gx: 6, gy: 8, key: 'printer' },
 ];
 
 // Interior divider walls (half-height) carving the floor into six themed rooms.

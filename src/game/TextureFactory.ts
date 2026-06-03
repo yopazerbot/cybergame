@@ -457,6 +457,74 @@ export function generateTextures(scene: Phaser.Scene): void {
     g.fillCircle(TILE_W / 2 - 3, -2, 4);
   });
 
+  const cx = TILE_W / 2;
+  // Office chair: low cushioned seat with a hint of a backrest.
+  makeBox(scene, 'chair', 15, 0x4a5570, 0x39425c, 0x2c3349, (g) => {
+    g.fillStyle(0x6a7596, 1);
+    g.fillEllipse(cx, TILE_H / 2, TILE_W * 0.42, TILE_H * 0.4);
+    g.fillStyle(0x39425c, 1);
+    g.fillRoundedRect(cx - 9, -6, 18, 8, 3); // backrest
+  });
+  // Bookshelf: tall unit with rows of coloured spines on the front faces.
+  makeBox(scene, 'bookshelf', 36, 0x7a5f47, 0x5e4836, 0x4a3a2c, (g, h) => {
+    const spines = [0xc0563f, 0xe0a93b, 0x3f7fb0, 0x4caf78, 0x9b59b6];
+    for (let r = 0; r < 4; r++) {
+      const yy = TILE_H / 2 + 6 + r * (h / 4);
+      for (let i = 0; i < 5; i++) {
+        g.fillStyle(spines[(r + i) % spines.length], 1);
+        g.fillRect(7 + i * 3.4, yy, 2.6, h / 4 - 4);
+      }
+    }
+  });
+  // Whiteboard: white panel with marker strokes + a coloured frame.
+  makeBox(scene, 'whiteboard', 30, 0xf6f8fc, 0xd7dded, 0xc4cce0, (g) => {
+    g.fillStyle(0xffffff, 1);
+    g.fillRoundedRect(cx - 16, 2, 32, 18, 2);
+    g.lineStyle(1.4, 0x3f7fb0, 1);
+    g.lineBetween(cx - 12, 7, cx - 2, 7);
+    g.lineBetween(cx - 12, 11, cx + 6, 11);
+    g.lineStyle(1.4, 0xc0563f, 1);
+    g.lineBetween(cx - 12, 15, cx, 15);
+  });
+  // Reception desk: a counter with a small monitor.
+  makeBox(scene, 'reception_desk', 24, 0x9a7a5b, 0x7a5f47, 0x624c39, (g) => {
+    g.fillStyle(0xb8946d, 1);
+    g.fillRoundedRect(cx - 18, TILE_H / 2 - 2, 36, 6, 2); // raised front lip
+    g.fillStyle(0x2b3242, 1);
+    g.fillRoundedRect(cx - 6, 0, 12, 8, 2);
+    g.fillStyle(0x5fd0c4, 1);
+    g.fillRect(cx - 4, 2, 8, 4);
+  });
+  // Sofa: low, wide, two cushions + arms.
+  makeBox(scene, 'sofa', 18, 0x4f7a86, 0x3c5e68, 0x2f4a52, (g) => {
+    g.fillStyle(0x6a98a4, 1);
+    g.fillRoundedRect(cx - 16, -2, 32, 10, 4); // backrest
+    g.fillStyle(0x7fb0bc, 1);
+    g.fillRoundedRect(cx - 14, 4, 13, 8, 3);
+    g.fillRoundedRect(cx + 1, 4, 13, 8, 3);
+  });
+  // Coffee table: very low wood/glass top.
+  makeBox(scene, 'coffee_table', 9, 0x9a7a5b, 0x7a5f47, 0x624c39, (g) => {
+    g.fillStyle(0xbfe3f5, 0.55);
+    g.fillPoints(diamondPoints(6, 3, 0.8, 0.8), true);
+  });
+  // Printer: grey box with a paper tray and a status LED.
+  makeBox(scene, 'printer', 18, 0xb9c2d4, 0x95a0b8, 0x7c889f, (g) => {
+    g.fillStyle(0x6b768a, 1);
+    g.fillRoundedRect(cx - 10, 4, 20, 3, 1.5); // paper slot
+    g.fillStyle(0xeef2fb, 1);
+    g.fillRect(cx - 6, 1, 12, 3); // paper
+    g.fillStyle(0x59f08a, 1);
+    g.fillCircle(cx + 8, 9, 1.4); // LED
+  });
+  // Boardroom table halves (two adjacent tiles read as one long table).
+  const tableDecor = (g: Phaser.GameObjects.Graphics) => {
+    g.fillStyle(0xb08a5f, 1);
+    g.fillPoints(diamondPoints(0, -2, 0.96, 0.96), true);
+  };
+  makeBox(scene, 'boardroom_table_l', 16, 0x8a6a48, 0x6e5238, 0x57402b, tableDecor);
+  makeBox(scene, 'boardroom_table_r', 16, 0x8a6a48, 0x6e5238, 0x57402b, tableDecor);
+
   makeCharacter(scene, CHAR_PLAYER, 0x2d6cdf, 0x163a82);
   generateCharacters(scene, STAKEHOLDERS);
 }
