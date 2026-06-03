@@ -1,17 +1,19 @@
-import type { GameState } from './types';
-import { DEADLINE_HOURS } from './config';
+import type { GameState, Difficulty } from './types';
+import { DIFFICULTY } from './config';
 import { eventBus } from './eventBus';
 import { buildObjectives } from '../scenario/objectives';
 
 // Tiny observable store — the single source of truth.
 // Phaser and React both read via getState() and subscribe via subscribe().
 
-function initialState(): GameState {
+function initialState(difficulty: Difficulty = 'normal'): GameState {
+  const d = DIFFICULTY[difficulty];
   return {
     gamePhase: 'start',
+    difficulty,
     phase: 'detection',
-    clock: { hoursElapsed: 0, deadlineHours: DEADLINE_HOURS },
-    meters: { reputation: 70, compliance: 60, cost: 10 },
+    clock: { hoursElapsed: 0, deadlineHours: d.deadlineHours },
+    meters: { reputation: d.reputation, compliance: d.compliance, cost: d.cost },
     score: 0,
     flags: {},
     resolvedNodes: [],
@@ -46,8 +48,17 @@ class Store {
     eventBus.emit('stateChanged', undefined);
   }
 
+  /** Begin a fresh run at the chosen difficulty. */
+  startGame(difficulty: Difficulty): void {
+    this.state = initialState(difficulty);
+    this.state.gamePhase = 'playing';
+    this.state.objectives = buildObjectives(this.state);
+    this.listeners.forEach((l) => l(this.state));
+    eventBus.emit('stateChanged', undefined);
+  }
+
   reset(): void {
-    this.state = initialState();
+    this.state = initialState(this.state.difficulty);
     this.state.objectives = buildObjectives(this.state);
     this.listeners.forEach((l) => l(this.state));
     eventBus.emit('stateChanged', undefined);

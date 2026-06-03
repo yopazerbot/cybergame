@@ -1,11 +1,42 @@
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../useStore';
 import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
 import { GDPR_DEBRIEF } from '../../scenario/debrief';
+import { getUsername } from '../../core/profile';
+import { submitScore, type ScoreEntry } from '../../core/api';
+import { Scoreboard } from './Scoreboard';
+import { Credit } from './Credit';
 
 export function DebriefScreen() {
   const state = useStore();
   const ending = state.ending;
+  const submitted = useRef(false);
+  const [board, setBoard] = useState<ScoreEntry[] | null>(null);
+  const [rank, setRank] = useState<number | null>(null);
+  const [myTs, setMyTs] = useState<number | undefined>(undefined);
+
+  const hoursLeft = Math.max(0, Math.round(state.clock.deadlineHours - state.clock.hoursElapsed));
+
+  useEffect(() => {
+    if (submitted.current || !ending) return;
+    submitted.current = true;
+    submitScore({
+      name: getUsername() || 'Anonymous',
+      score: state.score,
+      ending: ending.id,
+      difficulty: state.difficulty,
+      hoursLeft,
+      compliance: Math.round(state.meters.compliance),
+      reputation: Math.round(state.meters.reputation),
+    }).then((res) => {
+      if (!res) return;
+      setBoard(res.scores);
+      setRank(res.rank);
+      setMyTs(res.entry.ts);
+    });
+  }, []);
+
   if (!ending) return null;
 
   const playAgain = () => {
@@ -48,6 +79,20 @@ export function DebriefScreen() {
           ))}
         </div>
 
+        <div className="leaderboard-block">
+          <h3>
+            🏆 Global leaderboard
+            {rank !== null && (
+              <span className="your-rank"> — you placed #{rank}</span>
+            )}
+          </h3>
+          {board === null ? (
+            <Scoreboard limit={10} highlightTs={myTs} />
+          ) : (
+            <Scoreboard scores={board} limit={10} highlightTs={myTs} />
+          )}
+        </div>
+
         <p className="disclaimer">
           Educational simulation — a simplified model of GDPR Articles 33 & 34, not legal advice.
         </p>
@@ -55,6 +100,8 @@ export function DebriefScreen() {
         <button className="btn primary big" onClick={playAgain}>
           Play again
         </button>
+
+        <Credit className="on-card" />
       </div>
     </div>
   );

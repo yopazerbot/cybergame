@@ -5,3 +5,6 @@ dist-ssr
 .DS_Store
 *.log
 .vite
+
+# Local scoreboard data (Railway volume in prod)
+data/

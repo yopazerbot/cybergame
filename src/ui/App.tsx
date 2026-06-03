@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { useStore } from './useStore';
+import { getUsername } from '../core/profile';
 import { StartScreen } from './components/StartScreen';
+import { UsernameGate } from './components/UsernameGate';
 import { Hud } from './components/Hud';
 import { ObjectiveTracker } from './components/ObjectiveTracker';
 import { DialoguePanel } from './components/DialoguePanel';
@@ -11,6 +14,15 @@ import { Tutorial } from './components/Tutorial';
 
 export function App() {
   const state = useStore();
+  const [name, setName] = useState(getUsername());
+
+  if (!name) {
+    return (
+      <div className="ui-layer">
+        <UsernameGate onDone={setName} />
+      </div>
+    );
+  }
 
   return (
     <div className="ui-layer">

@@ -7,6 +7,8 @@ export type Phase = 'detection' | 'containment' | 'assessment' | 'notification' 
 
 export type GamePhase = 'start' | 'playing' | 'ended';
 
+export type Difficulty = 'easy' | 'normal' | 'hard';
+
 /** Meters shown in the HUD. All 0..100. `cost` is "money/effort spent" (higher = worse). */
 export interface Meters {
   reputation: number;
@@ -43,6 +45,7 @@ export interface Ending {
 
 export interface GameState {
   gamePhase: GamePhase;
+  difficulty: Difficulty;
   phase: Phase;
   clock: Clock;
   meters: Meters;

@@ -31,20 +31,39 @@ npm run dev      # http://localhost:5173
 Build a production bundle:
 
 ```bash
-npm run build    # -> dist/
-npm run start    # serves dist/ on $PORT (default 3000)
+npm run build       # -> dist/
+npm run start       # Express server: serves dist/ + scoreboard API on $PORT (default 3000)
 ```
+
+For local API work in dev, run the server alongside Vite (the dev server proxies `/api` to it):
+
+```bash
+npm run dev:server  # scoreboard API on :3000
+npm run dev         # app on :5173, /api proxied to :3000
+```
+
+## Backend & cross-session scoreboard
+
+`server/index.js` is a tiny Express app that serves the built SPA **and** exposes a global
+leaderboard API:
+
+- `GET /api/scores` — top scores.
+- `POST /api/scores` — submit `{ name, score, ending, difficulty, hoursLeft, compliance, reputation }`.
+
+Scores persist to `${DATA_DIR}/scores.json`. The client fails soft — if the API is
+unreachable the game still works fully (the leaderboard just shows empty).
 
 ## Deploy on Railway
 
 This repo is Railway-ready (see `railway.json`):
 
 1. Create a new Railway project from this GitHub repo.
-2. Railway (Nixpacks) runs `npm run build`, then `npm run start`.
-3. `npm run start` serves the static `dist/` build on Railway's injected `$PORT`.
+2. Railway (Nixpacks) runs `npm run build`, then `npm run start` (the Express server).
+3. **Add a Volume** so the leaderboard survives deploys/restarts:
+   - Mount it at e.g. `/data`.
+   - Set env var **`DATA_DIR=/data`**.
 
-No environment variables are required. The app is a static SPA, so any static host works too
-(point it at `dist/`).
+   Without a volume the scoreboard still works but resets whenever the container is replaced.
 
 ## How to play
 

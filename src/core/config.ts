@@ -13,6 +13,16 @@ export const GRID_SIZE = 12;
 export const DEADLINE_HOURS = 72;
 
 /**
+ * Difficulty presets. `deadlineHours` is the clock budget, `drift` is ambient
+ * game-hours per real second, and the meters set the starting position.
+ */
+export const DIFFICULTY = {
+  easy: { label: 'Easy', deadlineHours: 96, drift: 0.25, reputation: 75, compliance: 66, cost: 8 },
+  normal: { label: 'Normal', deadlineHours: 72, drift: 0.35, reputation: 70, compliance: 60, cost: 10 },
+  hard: { label: 'Hard', deadlineHours: 54, drift: 0.5, reputation: 62, compliance: 52, cost: 14 },
+} as const;
+
+/**
  * Baseline passive clock drift: real seconds -> game hours.
  * Most time pressure comes from choice `timeCostHours`, this is gentle ambient drift.
  */

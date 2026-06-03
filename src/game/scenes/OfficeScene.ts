@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GRID_SIZE, TILE, HOURS_PER_REAL_SECOND } from '../../core/config';
+import { GRID_SIZE, TILE, HOURS_PER_REAL_SECOND, DIFFICULTY } from '../../core/config';
 import { gridToWorld, worldToGrid } from '../iso';
 import { findPath } from '../pathfinding';
 import { Player } from '../entities/Player';
@@ -271,7 +271,8 @@ export class OfficeScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     const state = store.getState();
     if (state.gamePhase === 'playing' && !state.activeDialogue) {
-      this.clockAccum += (HOURS_PER_REAL_SECOND * delta) / 1000;
+      const drift = DIFFICULTY[state.difficulty]?.drift ?? HOURS_PER_REAL_SECOND;
+      this.clockAccum += (drift * delta) / 1000;
       if (this.clockAccum >= 0.15) {
         advanceClock(this.clockAccum);
         this.clockAccum = 0;
