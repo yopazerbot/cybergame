@@ -18,6 +18,8 @@ function initialState(difficulty: Difficulty = 'normal'): GameState {
     flags: {},
     resolvedNodes: [],
     activeDialogue: null,
+    activeInject: null,
+    firedInjects: [],
     objectives: [],
     npcInRange: null,
     ending: null,

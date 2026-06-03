@@ -4,6 +4,7 @@ import { store } from '../core/store';
 import { eventBus } from '../core/eventBus';
 import { sfx } from '../core/sfx';
 import { NODES, NODE_BY_ID, PHASE_ORDER, type DecisionNode } from './scenario';
+import { INJECTS, INJECT_BY_ID, type Inject } from './injects';
 
 // Pure-ish resolver: the only place that turns a player choice into new state.
 
@@ -201,13 +202,65 @@ function emitChoiceToast(e: { compliance?: number; reputation?: number }): void 
 /** Advance the game-time clock (called by the world's passive ticker). */
 export function advanceClock(hours: number): void {
   const state = store.getState();
-  if (state.gamePhase !== 'playing') return;
+  if (state.gamePhase !== 'playing' || state.activeDialogue || state.activeInject) return;
   const clock = { ...state.clock, hoursElapsed: state.clock.hoursElapsed + hours };
-  const next = { ...state, clock, score: computeScore({ ...state, clock }) };
+  let next: GameState = { ...state, clock, score: computeScore({ ...state, clock }) };
 
   if (clock.hoursElapsed >= clock.deadlineHours && !state.flags.regulatorNotified) {
     endGame(next);
-  } else {
-    store.setState(next);
+    return;
   }
+
+  // Maybe interrupt with a timed crisis inject.
+  const inject = pickEligibleInject(next);
+  if (inject) {
+    next = { ...next, activeInject: { id: inject.id }, firedInjects: [...next.firedInjects, inject.id] };
+    eventBus.emit('notify', { text: `Incoming: ${inject.kicker}`, tone: 'bad' });
+    sfx.bad();
+  }
+
+  store.setState(next);
+}
+
+function pickEligibleInject(state: GameState): Inject | null {
+  const candidates = INJECTS.filter(
+    (i) =>
+      !state.firedInjects.includes(i.id) &&
+      state.clock.hoursElapsed >= i.afterHours &&
+      (!i.requireFlags || i.requireFlags.every((f) => state.flags[f])) &&
+      (!i.excludeFlags || !i.excludeFlags.some((f) => state.flags[f])),
+  );
+  if (candidates.length === 0) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+/** Apply a player's response to a timed inject. */
+export function resolveInject(injectId: string, choiceId: string): void {
+  const state = store.getState();
+  const inject = INJECT_BY_ID[injectId];
+  const choice = inject?.choices.find((c) => c.id === choiceId);
+  if (!inject || !choice) return;
+
+  const e = choice.effects;
+  const meters = {
+    reputation: clamp(state.meters.reputation + (e.reputation ?? 0)),
+    compliance: clamp(state.meters.compliance + (e.compliance ?? 0)),
+    cost: clamp(state.meters.cost + (e.cost ?? 0)),
+  };
+  const flags = { ...state.flags };
+  (e.setFlags ?? []).forEach((flag) => (flags[flag] = true));
+  const clock = { ...state.clock, hoursElapsed: state.clock.hoursElapsed + (e.timeCostHours ?? 0) };
+
+  const next: GameState = { ...state, meters, flags, clock, activeInject: null };
+  next.score = computeScore(next);
+
+  const netGood = (e.compliance ?? 0) + (e.reputation ?? 0) >= 0;
+  if (netGood) sfx.good();
+  else sfx.bad();
+  emitChoiceToast(e);
+  eventBus.emit('notify', { text: choice.feedback, tone: netGood ? 'good' : 'bad' });
+
+  const deadlineMissed = next.clock.hoursElapsed >= next.clock.deadlineHours && !flags.regulatorNotified;
+  if (deadlineMissed) endGame(next);
+  else store.setState(next);
 }

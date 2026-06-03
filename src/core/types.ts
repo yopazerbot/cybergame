@@ -54,6 +54,10 @@ export interface GameState {
   resolvedNodes: string[];
   /** Currently open dialogue, if any (locks player movement). The panel derives the node. */
   activeDialogue: { npcId: Role } | null;
+  /** A timed crisis inject currently demanding a decision (locks movement + clock). */
+  activeInject: { id: string } | null;
+  /** Injects that have already fired (each fires at most once). */
+  firedInjects: string[];
   objectives: Objective[];
   /** NPC the player is currently standing next to (for the "Talk" prompt). */
   npcInRange: Role | null;

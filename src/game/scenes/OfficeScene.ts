@@ -161,7 +161,7 @@ export class OfficeScene extends Phaser.Scene {
   private setupInput(): void {
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
       const state = store.getState();
-      if (state.gamePhase !== 'playing' || state.activeDialogue) {
+      if (state.gamePhase !== 'playing' || state.activeDialogue || state.activeInject) {
         this.hover.setVisible(false);
         this.input.setDefaultCursor('default');
         return;
@@ -181,7 +181,8 @@ export class OfficeScene extends Phaser.Scene {
 
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       const state = store.getState();
-      if (state.gamePhase !== 'playing' || state.activeDialogue || this.player.moving) return;
+      if (state.gamePhase !== 'playing' || state.activeDialogue || state.activeInject || this.player.moving)
+        return;
 
       const { gx, gy } = worldToGrid(p.worldX, p.worldY);
       const npcId = this.npcAt(gx, gy);
@@ -270,7 +271,7 @@ export class OfficeScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     const state = store.getState();
-    if (state.gamePhase === 'playing' && !state.activeDialogue) {
+    if (state.gamePhase === 'playing' && !state.activeDialogue && !state.activeInject) {
       const drift = DIFFICULTY[state.difficulty]?.drift ?? HOURS_PER_REAL_SECOND;
       this.clockAccum += (drift * delta) / 1000;
       if (this.clockAccum >= 0.15) {

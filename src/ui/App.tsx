@@ -8,6 +8,7 @@ import { ObjectiveTracker } from './components/ObjectiveTracker';
 import { DialoguePanel } from './components/DialoguePanel';
 import { DebriefScreen } from './components/DebriefScreen';
 import { TalkPrompt } from './components/TalkPrompt';
+import { InjectModal } from './components/InjectModal';
 import { Toasts } from './components/Toasts';
 import { ControlsLegend } from './components/ControlsLegend';
 import { Tutorial } from './components/Tutorial';
@@ -35,8 +36,11 @@ export function App() {
           <ControlsLegend />
           <Toasts />
           <Tutorial />
-          {!state.activeDialogue && state.npcInRange && <TalkPrompt npcId={state.npcInRange} />}
+          {!state.activeDialogue && !state.activeInject && state.npcInRange && (
+            <TalkPrompt npcId={state.npcInRange} />
+          )}
           {state.activeDialogue && <DialoguePanel npcId={state.activeDialogue.npcId} />}
+          {state.activeInject && <InjectModal injectId={state.activeInject.id} />}
         </>
       )}
 
