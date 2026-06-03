@@ -95,6 +95,10 @@ export class OfficeScene extends Phaser.Scene {
   private dragging = false;
   private downAt = { x: 0, y: 0 };
   private panLast = { x: 0, y: 0 };
+  private panVel = { x: 0, y: 0 };
+  private momentum = { x: 0, y: 0 };
+  private pinchDist = 0;
+  private pinching = false;
   private builtMode: Mode = 'defender';
   private darkOverlay?: Phaser.GameObjects.Rectangle;
   private glow?: Phaser.GameObjects.Image;
@@ -139,6 +143,7 @@ export class OfficeScene extends Phaser.Scene {
     eventBus.on('restart', () => this.resetWorld());
     eventBus.on('zoom', ({ dir }) => this.applyZoom(dir));
     this.setupWheelZoom();
+    this.input.addPointer(1); // enable a 2nd touch pointer for pinch-zoom
 
     this.refreshPendingIndicators();
   }
@@ -236,6 +241,52 @@ export class OfficeScene extends Phaser.Scene {
     cam.centerOn(center.x, center.y - 6);
   }
 
+  /** Per-frame camera input: pinch-zoom (2 pointers) + flick momentum. */
+  private updateCameraInput(): void {
+    const cam = this.cameras.main;
+    const p1 = this.input.pointer1;
+    const p2 = this.input.pointer2;
+    if (p1?.isDown && p2?.isDown) {
+      const d = Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y);
+      if (this.pinchDist > 0 && d > 0) {
+        cam.setZoom(Phaser.Math.Clamp(cam.zoom * (d / this.pinchDist), 0.3, 3.5));
+        this.clampCamera();
+      }
+      this.pinchDist = d;
+      this.pinching = true;
+      this.dragging = false;
+      this.momentum.x = 0;
+      this.momentum.y = 0;
+      return;
+    }
+    this.pinchDist = 0;
+    this.pinching = false;
+    if (!p1?.isDown && (Math.abs(this.momentum.x) > 0.15 || Math.abs(this.momentum.y) > 0.15)) {
+      cam.scrollX -= this.momentum.x / cam.zoom;
+      cam.scrollY -= this.momentum.y / cam.zoom;
+      this.momentum.x *= 0.9;
+      this.momentum.y *= 0.9;
+      this.clampCamera();
+    }
+  }
+
+  /** Keep the board from being panned/zoomed fully off-screen. */
+  private clampCamera(): void {
+    const cam = this.cameras.main;
+    const pad = 220;
+    const corners = [
+      this.toWorld(0, 0),
+      this.toWorld(GRID_SIZE - 1, 0),
+      this.toWorld(0, GRID_SIZE - 1),
+      this.toWorld(GRID_SIZE - 1, GRID_SIZE - 1),
+    ];
+    const xs = corners.map((c) => c.x);
+    const ys = corners.map((c) => c.y);
+    const cx = Phaser.Math.Clamp(cam.midPoint.x, Math.min(...xs) - pad, Math.max(...xs) + pad);
+    const cy = Phaser.Math.Clamp(cam.midPoint.y, Math.min(...ys) - pad, Math.max(...ys) + pad);
+    cam.centerOn(cx, cy);
+  }
+
   // Manual zoom (UI buttons + mouse wheel). Reset re-fits the board.
   private applyZoom(dir: 'in' | 'out' | 'reset'): void {
     if (dir === 'reset') {
@@ -245,6 +296,7 @@ export class OfficeScene extends Phaser.Scene {
     const cam = this.cameras.main;
     const factor = dir === 'in' ? 1.2 : 1 / 1.2;
     cam.setZoom(Phaser.Math.Clamp(cam.zoom * factor, 0.3, 3.5));
+    this.clampCamera();
   }
 
   private setupWheelZoom(): void {
@@ -254,6 +306,7 @@ export class OfficeScene extends Phaser.Scene {
         const cam = this.cameras.main;
         const factor = dy > 0 ? 1 / 1.1 : 1.1;
         cam.setZoom(Phaser.Math.Clamp(cam.zoom * factor, 0.3, 3.5));
+        this.clampCamera();
       },
     );
   }
@@ -432,8 +485,8 @@ export class OfficeScene extends Phaser.Scene {
       const active =
         state.gamePhase === 'playing' && !state.activeDialogue && !state.activeInject;
 
-      // Click-hold and drag to pan the world in any direction.
-      if (p.isDown && active) {
+      // Click-hold and drag to pan (single pointer only — 2 pointers = pinch-zoom).
+      if (p.isDown && active && !this.pinching && !this.input.pointer2?.isDown) {
         const dx = p.x - this.panLast.x;
         const dy = p.y - this.panLast.y;
         this.panLast.x = p.x;
@@ -443,6 +496,9 @@ export class OfficeScene extends Phaser.Scene {
           const cam = this.cameras.main;
           cam.scrollX -= dx / cam.zoom;
           cam.scrollY -= dy / cam.zoom;
+          this.panVel.x = dx;
+          this.panVel.y = dy;
+          this.clampCamera();
           this.hover.setVisible(false);
           this.input.setDefaultCursor('grabbing');
           return;
@@ -474,13 +530,23 @@ export class OfficeScene extends Phaser.Scene {
       this.downAt.y = p.y;
       this.panLast.x = p.x;
       this.panLast.y = p.y;
+      this.momentum.x = 0;
+      this.momentum.y = 0;
     });
 
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
       const wasDragging = this.dragging;
       this.dragging = false;
       this.input.setDefaultCursor('default');
-      if (!wasDragging) this.handleTap(p);
+      if (wasDragging) {
+        // Flick momentum (decays in update()).
+        this.momentum.x = this.panVel.x;
+        this.momentum.y = this.panVel.y;
+      } else {
+        this.handleTap(p);
+      }
+      this.panVel.x = 0;
+      this.panVel.y = 0;
     });
     this.input.on('pointerupoutside', () => {
       this.dragging = false;
@@ -654,7 +720,9 @@ export class OfficeScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     const state = store.getState();
     if (state.gamePhase === 'playing') this.updateMood(state);
-    if (state.gamePhase === 'playing' && !state.activeDialogue && !state.activeInject) {
+    const active = state.gamePhase === 'playing' && !state.activeDialogue && !state.activeInject;
+    if (active) this.updateCameraInput();
+    if (active) {
       this.tryKeyboardMove();
       // Batch passive clock drift so we don't re-render the UI every frame.
       // Drift is fixed for all difficulties — difficulty never changes the clock.

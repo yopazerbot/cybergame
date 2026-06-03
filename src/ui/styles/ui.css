@@ -859,9 +859,6 @@ kbd {
   .howto {
     grid-template-columns: 1fr;
   }
-  .controls-legend {
-    display: none;
-  }
   .roles {
     grid-template-columns: 1fr;
   }
@@ -2053,5 +2050,33 @@ html.attacker-mode kbd {
 @media (max-width: 880px) {
   .start-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ------------------------------------------------------- touch / coarse pointer */
+.legend-touch {
+  display: none;
+}
+@media (pointer: coarse) {
+  .legend-desktop {
+    display: none;
+  }
+  .legend-touch {
+    display: block;
+  }
+  /* Comfortable >=44px tap targets on touch devices. */
+  .zoom-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+  }
+  .mute-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .btn.choice,
+  .inject-choice {
+    padding-top: 14px;
+    padding-bottom: 14px;
   }
 }

@@ -2,14 +2,17 @@
 export function ControlsLegend() {
   return (
     <div className="controls-legend">
-      <span>
+      <span className="legend-desktop">
         <kbd>🖱️</kbd> Click floor · <kbd>↑↓←→</kbd> arrows to walk
       </span>
-      <span>
+      <span className="legend-desktop">
         <kbd>Space</kbd> / click a colleague to talk
       </span>
-      <span>
+      <span className="legend-desktop">
         <kbd>✋</kbd> Drag to pan · scroll to zoom
+      </span>
+      <span className="legend-touch">
+        <kbd>👆</kbd> Tap to move · drag to pan · pinch to zoom · tap a colleague to talk
       </span>
       <span className="legend-hint">Follow 👉 the glowing rings ✨</span>
     </div>
