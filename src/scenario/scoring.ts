@@ -21,7 +21,7 @@ import {
   deadlineFail,
   meterLabels,
 } from './campaign';
-import { INJECTS, INJECT_BY_ID, type Inject } from './injects';
+import { INJECTS, ATTACKER_INJECTS, INJECT_BY_ID, type Inject } from './injects';
 import {
   tickNetwork,
   isolate,
@@ -357,8 +357,8 @@ export function advanceClock(hours: number): void {
     return;
   }
 
-  // Maybe interrupt with a timed crisis inject (defender campaign only).
-  const inject = isDefender ? pickEligibleInject(next) : null;
+  // Maybe interrupt with a timed crisis inject (both campaigns have their own pool).
+  const inject = pickEligibleInject(next);
   if (inject) {
     next = { ...next, activeInject: { id: inject.id }, firedInjects: [...next.firedInjects, inject.id] };
     eventBus.emit('notify', { text: `Incoming: ${inject.kicker}`, tone: 'bad' });
@@ -429,7 +429,8 @@ export function networkRotateCreds(): void {
 function pickEligibleInject(state: GameState): Inject | null {
   // Difficulty caps how many crisis injects a run can throw at the player.
   if (state.firedInjects.length >= DIFFICULTY[state.difficulty].maxInjects) return null;
-  const candidates = INJECTS.filter(
+  const pool = state.mode === 'attacker' ? ATTACKER_INJECTS : INJECTS;
+  const candidates = pool.filter(
     (i) =>
       !state.firedInjects.includes(i.id) &&
       state.clock.hoursElapsed >= i.afterHours &&

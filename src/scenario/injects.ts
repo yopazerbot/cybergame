@@ -200,6 +200,119 @@ export const INJECTS: Inject[] = [
   },
 ];
 
+// Attacker-campaign injects: blue-team pressure events. Meters read as
+// Stealth (compliance) / Loot (reputation) / Heat (cost). The "quiet" option is
+// the smart tradecraft; each teaches the defensive control behind it.
+export const ATTACKER_INJECTS: Inject[] = [
+  {
+    id: 'soc_flag',
+    afterHours: 5,
+    excludeFlags: ['tracksCovered'],
+    kicker: 'SIGNAL — Their SOC',
+    icon: '🛰️',
+    heading: 'The SOC flagged your beacon',
+    text:
+      'An analyst opened a ticket on the periodic outbound traffic from your foothold. They are ' +
+      'not sure yet what it is. Push on, or go quiet?',
+    seconds: 24,
+    defaultChoice: 2,
+    choices: [
+      {
+        id: 'soc_quiet',
+        label: 'Lengthen the beacon interval and add jitter',
+        tag: 'quiet tradecraft',
+        effects: { compliance: 6, cost: -4, timeCostHours: 2 },
+        feedback:
+          'Slowing and randomising C2 beaconing defeats naive interval-detection. Defenders counter ' +
+          'with JA3/TLS fingerprinting and long-haul beacon analytics, not just fixed-interval rules.',
+      },
+      {
+        id: 'soc_push',
+        label: 'Race to finish before they triage',
+        tag: 'loud',
+        effects: { reputation: 4, cost: 10 },
+        feedback:
+          'Speeding up spikes your traffic and confirms the analyst’s suspicion — Heat way up. A calm ' +
+          'SOC wants exactly this panic.',
+      },
+      {
+        id: 'soc_ignore',
+        label: 'Do nothing and hope they close it',
+        effects: { cost: 6, timeCostHours: 1 },
+        feedback:
+          'Hope is not tradecraft. An open ticket on unexplained egress almost always escalates to a hunt.',
+      },
+    ],
+  },
+  {
+    id: 'edr_quarantine',
+    afterHours: 9,
+    requireFlags: ['accessGained'],
+    excludeFlags: ['tracksCovered'],
+    kicker: 'ALERT — Endpoint EDR',
+    icon: '🧯',
+    heading: 'EDR quarantined one of your hosts',
+    text:
+      'Your implant on a workstation just got isolated by their EDR. You still hold other access. ' +
+      'How do you react?',
+    seconds: 22,
+    defaultChoice: 1,
+    choices: [
+      {
+        id: 'edr_lowprofile',
+        label: 'Abandon that host, fall back to living-off-the-land',
+        tag: 'quiet tradecraft',
+        effects: { compliance: 6, cost: -3, timeCostHours: 2 },
+        feedback:
+          'Burning a caught implant and pivoting to built-in tooling (T1218) keeps you under the EDR’s ' +
+          'signatures. This is why defenders need behavioural detection + tiered admin, not just AV.',
+      },
+      {
+        id: 'edr_repersist',
+        label: 'Redeploy the same implant elsewhere immediately',
+        tag: 'loud',
+        effects: { compliance: -6, cost: 11 },
+        feedback:
+          'Re-dropping a signatured implant lights up every other EDR sensor — you hand the defenders ' +
+          'your IOCs and a clean attribution trail.',
+      },
+    ],
+  },
+  {
+    id: 'threat_hunt',
+    afterHours: 20,
+    excludeFlags: ['dataExfiltrated'],
+    kicker: 'INTEL — Threat hunt',
+    icon: '🔦',
+    heading: 'A proactive threat-hunt sweep has started',
+    text:
+      'Word is their team kicked off a hunt across the estate. The customer database is in reach ' +
+      'but not yet exfiltrated. Grab it now, or wait them out?',
+    seconds: 26,
+    defaultChoice: 0,
+    choices: [
+      {
+        id: 'hunt_lowandslow',
+        label: 'Stay dark and wait for the sweep to pass',
+        tag: 'quiet tradecraft',
+        effects: { compliance: 7, cost: -3, timeCostHours: 4 },
+        feedback:
+          'Patience beats a hunt — going dormant denies hunters the live activity they look for. The ' +
+          'trade-off is time, which is exactly the pressure a good hunt applies.',
+      },
+      {
+        id: 'hunt_grabnow',
+        label: 'Bulk-pull the database before they reach it',
+        tag: 'loud',
+        effects: { reputation: 10, cost: 14, setFlags: ['loud'] },
+        feedback:
+          'A bulk egress mid-hunt is the loudest possible move — DLP and NetFlow will catch it. High ' +
+          'Loot, very high Heat.',
+      },
+    ],
+  },
+];
+
 export const INJECT_BY_ID: Record<string, Inject> = Object.fromEntries(
-  INJECTS.map((i) => [i.id, i]),
+  [...INJECTS, ...ATTACKER_INJECTS].map((i) => [i.id, i]),
 );

@@ -6,7 +6,7 @@ import { campaignDebrief } from '../../scenario/campaign';
 import { getUsername, unlockAchievements } from '../../core/profile';
 import { submitScore, type ScoreEntry } from '../../core/api';
 import { outcomeReport } from '../../scenario/scoring';
-import { earnedAchievements } from '../../scenario/achievements';
+import { earnedAchievements, achievementCount } from '../../scenario/achievements';
 import { Scoreboard } from './Scoreboard';
 import { Credit } from './Credit';
 
@@ -87,32 +87,35 @@ export function DebriefScreen() {
           ))}
         </div>
 
-        {state.mode === 'defender' && (
-          <>
-            <h3 className="debrief-title">
-              Achievements <span className="ach-count">{earned.length}/7</span>
-            </h3>
-            {earned.length === 0 ? (
-              <p className="ach-empty">No achievements this run — try a cleaner, faster response.</p>
-            ) : (
-              <div className="ach-grid">
-                {earned.map((a) => (
-                  <div
-                    className={`ach-card ${freshAchievements.includes(a.id) ? 'fresh' : ''}`}
-                    key={a.id}
-                    title={a.desc}
-                  >
-                    <span className="ach-icon">{a.icon}</span>
-                    <span className="ach-text">
-                      <strong>{a.title}</strong>
-                      <em>{a.desc}</em>
-                    </span>
-                    {freshAchievements.includes(a.id) && <span className="ach-new">NEW</span>}
-                  </div>
-                ))}
+        <h3 className="debrief-title">
+          Achievements{' '}
+          <span className="ach-count">
+            {earned.length}/{achievementCount(state)}
+          </span>
+        </h3>
+        {earned.length === 0 ? (
+          <p className="ach-empty">
+            {state.mode === 'attacker'
+              ? 'No achievements this run — try a quieter, cleaner heist.'
+              : 'No achievements this run — try a cleaner, faster response.'}
+          </p>
+        ) : (
+          <div className="ach-grid">
+            {earned.map((a) => (
+              <div
+                className={`ach-card ${freshAchievements.includes(a.id) ? 'fresh' : ''}`}
+                key={a.id}
+                title={a.desc}
+              >
+                <span className="ach-icon">{a.icon}</span>
+                <span className="ach-text">
+                  <strong>{a.title}</strong>
+                  <em>{a.desc}</em>
+                </span>
+                {freshAchievements.includes(a.id) && <span className="ach-new">NEW</span>}
               </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
 
         <h3 className="debrief-title">

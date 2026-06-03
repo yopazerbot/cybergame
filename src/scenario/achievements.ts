@@ -71,10 +71,62 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
+// Attacker-campaign achievements (meters: Stealth/Loot/Heat).
+export const ATTACKER_ACHIEVEMENTS: Achievement[] = [
+  {
+    id: 'ghost',
+    icon: '👻',
+    title: 'Ghost in the Machine',
+    desc: 'Pull off the clean-getaway (Ghost) ending.',
+    earned: (s) => s.ending?.id === 'ghost',
+  },
+  {
+    id: 'no_alarms',
+    icon: '🔕',
+    title: 'No Alarms',
+    desc: 'Exfiltrate the data while keeping Heat at 25 or below.',
+    earned: (s) => !!s.flags.dataExfiltrated && s.meters.cost <= 25,
+  },
+  {
+    id: 'big_score',
+    icon: '💰',
+    title: 'Big Score',
+    desc: 'Get the data out with Loot at 80 or above.',
+    earned: (s) => !!s.flags.dataExfiltrated && s.meters.reputation >= 80,
+  },
+  {
+    id: 'silent_op',
+    icon: '🤫',
+    title: 'Silent Operator',
+    desc: 'Complete the heist without ever going loud.',
+    earned: (s) => !!s.flags.dataExfiltrated && !s.flags.loud,
+  },
+  {
+    id: 'clean_exit',
+    icon: '🧹',
+    title: 'Clean Exit',
+    desc: 'Cover your tracks and avoid being caught.',
+    earned: (s) => !!s.flags.tracksCovered && !s.flags.gotCaught,
+  },
+  {
+    id: 'full_chain',
+    icon: '🔗',
+    title: 'Full Kill Chain',
+    desc: 'Complete every objective on the checklist.',
+    earned: (s) => s.objectives.length > 0 && s.objectives.every((o) => o.done),
+  },
+];
+
 export const ACHIEVEMENT_BY_ID: Record<string, Achievement> = Object.fromEntries(
-  ACHIEVEMENTS.map((a) => [a.id, a]),
+  [...ACHIEVEMENTS, ...ATTACKER_ACHIEVEMENTS].map((a) => [a.id, a]),
 );
 
 export function earnedAchievements(state: GameState): Achievement[] {
-  return ACHIEVEMENTS.filter((a) => a.earned(state));
+  const pool = state.mode === 'attacker' ? ATTACKER_ACHIEVEMENTS : ACHIEVEMENTS;
+  return pool.filter((a) => a.earned(state));
+}
+
+/** Total achievements available in the active campaign (for the "x/N" count). */
+export function achievementCount(state: GameState): number {
+  return (state.mode === 'attacker' ? ATTACKER_ACHIEVEMENTS : ACHIEVEMENTS).length;
 }

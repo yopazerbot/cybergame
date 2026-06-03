@@ -73,7 +73,13 @@ export function InjectModal({ injectId }: { injectId: string }) {
             <button
               key={c.id}
               ref={(el) => (choiceRefs.current[i] = el)}
-              className={`inject-choice ${c.tag === 'best practice' ? 'good' : c.tag === 'risky' ? 'bad' : ''}`}
+              className={`inject-choice ${
+                c.tag && (c.tag.includes('best') || c.tag.includes('quiet'))
+                  ? 'good'
+                  : c.tag && (c.tag.includes('risky') || c.tag.includes('loud'))
+                    ? 'bad'
+                    : ''
+              }`}
               onClick={() => pick(c.id)}
               onKeyDown={(e) => onChoiceKey(e, i, inject.choices.length)}
             >
