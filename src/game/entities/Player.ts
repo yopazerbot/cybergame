@@ -95,7 +95,15 @@ export class Player extends Phaser.GameObjects.Container {
 
   private stopWalk(): void {
     this.bob.pause();
-    this.avatar.setTexture(CHAR_PLAYER).setY(0).setScale(ART_INV, ART_INV);
+    this.avatar.setTexture(CHAR_PLAYER).setRotation(0).setY(0).setScale(ART_INV, ART_INV);
+    // A quick squash-and-settle so the stop reads as landing rather than freezing.
+    this.scene.tweens.add({
+      targets: this.avatar,
+      scaleY: { from: ART_INV * 0.88, to: ART_INV },
+      scaleX: { from: ART_INV * 1.08, to: ART_INV },
+      duration: 180,
+      ease: 'Back.out',
+    });
   }
 
   moveAlongPath(path: { gx: number; gy: number }[], onArrive: () => void): void {
@@ -117,6 +125,8 @@ export class Player extends Phaser.GameObjects.Container {
           // Face away when walking up-screen, toward the camera when walking down.
           this.avatar.setTexture(y < this.y ? CHAR_PLAYER_BACK : CHAR_PLAYER);
           this.avatar.setFlipX(x < this.x);
+          // Lean into the direction of travel for a sense of momentum.
+          this.avatar.setRotation(Math.sign(x - this.x) * 0.08);
           this.puff();
           this.gx = step.gx;
           this.gy = step.gy;

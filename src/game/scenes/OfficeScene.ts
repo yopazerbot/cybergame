@@ -349,17 +349,43 @@ export class OfficeScene extends Phaser.Scene {
     }
   }
 
-  /** A soft additive pool of window light on a floor tile (godray landing spot). */
+  /** A soft additive pool of window light on a floor tile, with a living daylight shimmer. */
   private windowLight(gx: number, gy: number): void {
     if (this.isWall(gx, gy)) return;
     const { x, y } = this.toWorld(gx, gy);
-    this.add
+    const pool = this.add
       .image(x, y, TEX_GLOW)
       .setTint(0xcfeaff)
       .setAlpha(0.16)
       .setScale(0.7, 0.42)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setDepth(isoDepth(gx, gy, -1));
+    this.tweens.add({
+      targets: pool,
+      alpha: { from: 0.1, to: 0.2 },
+      duration: 2600,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+      delay: Phaser.Math.Between(0, 1500),
+    });
+    // A faint column of daylight rising off the pool toward the window: a hint of a shaft.
+    const shaft = this.add
+      .image(x, y - 26, TEX_GLOW)
+      .setTint(0xeaf6ff)
+      .setAlpha(0.07)
+      .setScale(0.34, 1.25)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(9994);
+    this.tweens.add({
+      targets: shaft,
+      alpha: { from: 0.04, to: 0.11 },
+      duration: 3200,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+      delay: Phaser.Math.Between(0, 2000),
+    });
   }
 
   /** Blinking status LEDs on a server rack so it reads as alive. */
