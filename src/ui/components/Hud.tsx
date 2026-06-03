@@ -10,23 +10,26 @@ function Meter({
   icon,
   value,
   invert,
+  format,
 }: {
   label: string;
   icon: string;
   value: number;
   invert?: boolean;
+  format?: (v: number) => string;
 }) {
   // For "cost", higher is worse, so colour inverts.
   const good = invert ? value <= 40 : value >= 60;
   const mid = invert ? value <= 70 : value >= 35;
   const tone = good ? 'good' : mid ? 'mid' : 'bad';
+  const shown = format ? format(value) : String(Math.round(value));
   return (
     <div className={`meter ${tone}`}>
       <span className="meter-icon">{icon}</span>
       <div className="meter-body">
-        <div className="meter-head">
-          <span className="meter-label">{label}</span>
-          <span className="meter-num">{Math.round(value)}</span>
+        <div className="meter-label">{label}</div>
+        <div className="meter-val" title={`${Math.round(value)} / 100`}>
+          {shown}
         </div>
         <div className="meter-bar">
           <div className={`meter-fill ${tone}`} style={{ width: `${value}%` }} />
@@ -52,9 +55,25 @@ export function Hud() {
     <div className="hud">
       <Timer clock={state.clock} mode={state.mode} />
       <div className="meters">
-        <Meter label={ml.compliance.label} icon={ml.compliance.icon} value={state.meters.compliance} />
-        <Meter label={ml.reputation.label} icon={ml.reputation.icon} value={state.meters.reputation} />
-        <Meter label={ml.cost.label} icon={ml.cost.icon} value={state.meters.cost} invert />
+        <Meter
+          label={ml.compliance.label}
+          icon={ml.compliance.icon}
+          value={state.meters.compliance}
+          format={ml.compliance.format}
+        />
+        <Meter
+          label={ml.reputation.label}
+          icon={ml.reputation.icon}
+          value={state.meters.reputation}
+          format={ml.reputation.format}
+        />
+        <Meter
+          label={ml.cost.label}
+          icon={ml.cost.icon}
+          value={state.meters.cost}
+          invert
+          format={ml.cost.format}
+        />
       </div>
       <div className="hud-right">
         <div className="phase-pill">Phase · {phaseLabel}</div>

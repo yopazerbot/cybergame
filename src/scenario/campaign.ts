@@ -36,7 +36,16 @@ export const finishNodeId = (m: Mode): string => (atk(m) ? 'boss_getaway' : 'mgm
 export interface MeterLabel {
   label: string;
   icon: string;
+  /** Optional rich display of the 0..100 value (qualitative band, face, €…). */
+  format?: (v: number) => string;
 }
+
+const complianceBand = (v: number): string =>
+  v < 40 ? 'Not compliant' : v < 75 ? 'Almost compliant' : 'Fully compliant';
+const reputationFace = (v: number): string =>
+  v < 35 ? '😠 Hated' : v < 65 ? '😐 Neutral' : '😍 Loved';
+// The abstract 0..100 cost reads as incident spend in euros (≈ up to €500k).
+const costEuros = (v: number): string => `€${Math.round(v) * 5}k`;
 
 /** Re-skinned meter labels: the same three meters mean different things per side. */
 export const meterLabels = (
@@ -49,9 +58,9 @@ export const meterLabels = (
         cost: { label: 'Heat', icon: '🚨' },
       }
     : {
-        compliance: { label: 'Compliance', icon: '⚖️' },
-        reputation: { label: 'Reputation', icon: '💬' },
-        cost: { label: 'Cost', icon: '💸' },
+        compliance: { label: 'Compliance', icon: '⚖️', format: complianceBand },
+        reputation: { label: 'Reputation', icon: '💬', format: reputationFace },
+        cost: { label: 'Cost', icon: '💸', format: costEuros },
       };
 
 export const timerLabel = (m: Mode): { title: string; sub: string } =>

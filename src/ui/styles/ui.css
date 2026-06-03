@@ -1957,3 +1957,16 @@ html.attacker-mode .meter-bar {
 html.attacker-mode kbd {
   background: #3a2e57;
 }
+
+/* Richer meter readouts (qualitative band / face / €). */
+.meters {
+  min-width: 330px;
+}
+.meter-val {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.1;
+  margin: 1px 0 5px;
+  white-space: nowrap;
+}
