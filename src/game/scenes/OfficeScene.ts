@@ -106,6 +106,8 @@ export class OfficeScene extends Phaser.Scene {
     eventBus.on('requestDialogue', ({ npcId }) => this.openDialogue(npcId));
     eventBus.on('stateChanged', () => this.onStateChanged());
     eventBus.on('restart', () => this.resetWorld());
+    eventBus.on('zoom', ({ dir }) => this.applyZoom(dir));
+    this.setupWheelZoom();
 
     this.refreshPendingIndicators();
   }
@@ -201,6 +203,28 @@ export class OfficeScene extends Phaser.Scene {
     );
     cam.setZoom(zoom);
     cam.centerOn(center.x, center.y - 6);
+  }
+
+  // Manual zoom (UI buttons + mouse wheel). Reset re-fits the board.
+  private applyZoom(dir: 'in' | 'out' | 'reset'): void {
+    if (dir === 'reset') {
+      this.frameCamera();
+      return;
+    }
+    const cam = this.cameras.main;
+    const factor = dir === 'in' ? 1.2 : 1 / 1.2;
+    cam.setZoom(Phaser.Math.Clamp(cam.zoom * factor, 0.3, 3.5));
+  }
+
+  private setupWheelZoom(): void {
+    this.input.on(
+      'wheel',
+      (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
+        const cam = this.cameras.main;
+        const factor = dy > 0 ? 1 / 1.1 : 1.1;
+        cam.setZoom(Phaser.Math.Clamp(cam.zoom * factor, 0.3, 3.5));
+      },
+    );
   }
 
   private drawWallsAndFurniture(): void {

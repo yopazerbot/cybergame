@@ -18,6 +18,8 @@ export interface EventMap {
   notify: { text: string; tone: 'good' | 'bad' | 'info' };
   /** Replay the onboarding tutorial. */
   startTutorial: void;
+  /** Camera zoom control from the UI. */
+  zoom: { dir: 'in' | 'out' | 'reset' };
 }
 
 type Handler<K extends keyof EventMap> = (payload: EventMap[K]) => void;

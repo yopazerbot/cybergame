@@ -14,6 +14,7 @@ import { ControlsLegend } from './components/ControlsLegend';
 import { Tutorial } from './components/Tutorial';
 import { NetworkButton } from './components/NetworkButton';
 import { ContainmentMap } from './components/ContainmentMap';
+import { ZoomControls } from './components/ZoomControls';
 
 export function App() {
   const state = useStore();
@@ -40,7 +41,10 @@ export function App() {
           <Toasts />
           <Tutorial />
           {!state.activeDialogue && !state.activeInject && (
-            <NetworkButton onOpen={() => setMapOpen(true)} />
+            <div className="side-rail">
+              <ZoomControls />
+              <NetworkButton onOpen={() => setMapOpen(true)} />
+            </div>
           )}
           {!state.activeDialogue && !state.activeInject && state.npcInRange && (
             <TalkPrompt npcId={state.npcInRange} />
