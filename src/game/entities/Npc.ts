@@ -12,6 +12,8 @@ export class Npc extends Phaser.GameObjects.Container {
   private ring: Phaser.GameObjects.Image;
   private arrow: Phaser.GameObjects.Text;
   private plate: Phaser.GameObjects.Container;
+  private nextTag: Phaser.GameObjects.Container;
+  private isNext = false;
 
   constructor(scene: Phaser.Scene, stakeholder: Stakeholder, toWorld: ToWorld) {
     const { x, y } = toWorld(stakeholder.grid.gx, stakeholder.grid.gy);
@@ -42,10 +44,20 @@ export class Npc extends Phaser.GameObjects.Container {
       .setVisible(false);
 
     this.plate = this.makeNameplate(scene);
+    this.nextTag = this.makeNextTag(scene);
 
-    this.add([this.ring, body, this.plate, this.arrow]);
+    this.add([this.ring, body, this.plate, this.arrow, this.nextTag]);
     scene.add.existing(this);
     this.setDepth(isoDepth(stakeholder.grid.gx, stakeholder.grid.gy, 4));
+
+    scene.tweens.add({
+      targets: this.nextTag,
+      y: -150,
+      duration: 650,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+    });
 
     scene.tweens.add({
       targets: body,
@@ -109,8 +121,37 @@ export class Npc extends Phaser.GameObjects.Container {
     return scene.add.container(0, -102, [bg, name, role]);
   }
 
+  /** A bright bouncing "talk to me next" banner for the single primary target. */
+  private makeNextTag(scene: Phaser.Scene): Phaser.GameObjects.Container {
+    const text = scene.add
+      .text(0, 0, '👉 Talk to me next', {
+        fontFamily: 'Baloo 2, sans-serif',
+        fontSize: '12px',
+        color: '#3a2a00',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
+    const w = text.width + 18;
+    const hgt = 22;
+    const bg = scene.add.graphics();
+    bg.fillStyle(0xffd24a, 1);
+    bg.fillRoundedRect(-w / 2, -hgt / 2, w, hgt, 11);
+    bg.lineStyle(2, 0xffffff, 0.95);
+    bg.strokeRoundedRect(-w / 2, -hgt / 2, w, hgt, 11);
+    bg.fillStyle(0xffd24a, 1);
+    bg.fillTriangle(-5, hgt / 2 - 1, 5, hgt / 2 - 1, 0, hgt / 2 + 6);
+    return scene.add.container(0, -144, [bg, text]).setVisible(false);
+  }
+
+  /** Marks this NPC as the recommended next stop (stronger ring + banner). */
+  setNext(on: boolean): void {
+    this.isNext = on;
+    this.nextTag.setVisible(on);
+    if (on) this.ring.setAlpha(0.75);
+  }
+
   setPending(pending: boolean): void {
-    this.ring.setAlpha(pending ? 0.55 : 0.0);
+    this.ring.setAlpha(pending ? (this.isNext ? 0.75 : 0.55) : 0.0);
     this.arrow.setVisible(pending);
     this.plate.setScale(pending ? 1.05 : 1.0);
   }

@@ -9,6 +9,7 @@ import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
 import { sfx } from '../../core/sfx';
 import { STAKEHOLDERS, STAKEHOLDER_BY_ID } from '../../scenario/stakeholders';
+import { PHASE_ORDER } from '../../scenario/scenario';
 import { nodeForStakeholder, stakeholderHasPending } from '../../scenario/scoring';
 import { advanceClock } from '../../scenario/scoring';
 import type { Role } from '../../core/types';
@@ -400,9 +401,25 @@ export class OfficeScene extends Phaser.Scene {
 
   private refreshPendingIndicators(): void {
     const state = store.getState();
-    for (const npc of this.npcs) {
-      npc.setPending(state.gamePhase === 'playing' && stakeholderHasPending(state, npc.info.id));
-    }
+    const playing = state.gamePhase === 'playing';
+    const pendings = this.npcs.map((npc) => playing && stakeholderHasPending(state, npc.info.id));
+    // Pick a single "talk next" target: the pending NPC whose node is earliest
+    // in the response sequence, so the player always has a clear next step.
+    let target: Npc | null = null;
+    let targetRank = Infinity;
+    this.npcs.forEach((npc, i) => {
+      if (!pendings[i]) return;
+      const node = nodeForStakeholder(state, npc.info.id);
+      const rank = node ? PHASE_ORDER.indexOf(node.phase) : 99;
+      if (rank < targetRank) {
+        targetRank = rank;
+        target = npc;
+      }
+    });
+    this.npcs.forEach((npc, i) => {
+      npc.setNext(npc === target);
+      npc.setPending(pendings[i]);
+    });
   }
 
   private resetWorld(): void {
