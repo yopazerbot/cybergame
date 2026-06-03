@@ -3,6 +3,7 @@ import { useStore } from '../useStore';
 import { Timer } from './Timer';
 import { sfx } from '../../core/sfx';
 import { eventBus } from '../../core/eventBus';
+import { meterLabels } from '../../scenario/campaign';
 
 function Meter({
   label,
@@ -39,6 +40,7 @@ export function Hud() {
   const state = useStore();
   const [muted, setMuted] = useState(sfx.isMuted());
   const phaseLabel = state.phase.charAt(0).toUpperCase() + state.phase.slice(1);
+  const ml = meterLabels(state.mode);
 
   const toggleMute = () => {
     const next = !muted;
@@ -48,11 +50,11 @@ export function Hud() {
 
   return (
     <div className="hud">
-      <Timer clock={state.clock} />
+      <Timer clock={state.clock} mode={state.mode} />
       <div className="meters">
-        <Meter label="Compliance" icon="⚖️" value={state.meters.compliance} />
-        <Meter label="Reputation" icon="💬" value={state.meters.reputation} />
-        <Meter label="Cost" icon="💸" value={state.meters.cost} invert />
+        <Meter label={ml.compliance.label} icon={ml.compliance.icon} value={state.meters.compliance} />
+        <Meter label={ml.reputation.label} icon={ml.reputation.icon} value={state.meters.reputation} />
+        <Meter label={ml.cost.label} icon={ml.cost.icon} value={state.meters.cost} invert />
       </div>
       <div className="hud-right">
         <div className="phase-pill">Phase · {phaseLabel}</div>

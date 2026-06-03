@@ -1,4 +1,4 @@
-import type { Difficulty } from './types';
+import type { Difficulty, Mode } from './types';
 
 // Local player profile (handle + chosen difficulty), persisted in localStorage.
 
@@ -6,6 +6,24 @@ const NAME_KEY = 'breach.name';
 const DIFF_KEY = 'breach.difficulty';
 const ACH_KEY = 'breach.achievements';
 const REC_KEY = 'breach.recommendations';
+const MODE_KEY = 'breach.mode';
+
+/** Blue-team (defender) or red-team (attacker) campaign. Defaults to defender. */
+export function getMode(): Mode {
+  try {
+    return localStorage.getItem(MODE_KEY) === 'attacker' ? 'attacker' : 'defender';
+  } catch {
+    return 'defender';
+  }
+}
+
+export function setMode(m: Mode): void {
+  try {
+    localStorage.setItem(MODE_KEY, m);
+  } catch {
+    /* ignore */
+  }
+}
 
 /** Whether dialogs highlight the GDPR-recommended choice. Defaults on. */
 export function getRecommendations(): boolean {

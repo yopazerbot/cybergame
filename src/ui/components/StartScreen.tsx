@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { store } from '../../core/store';
 import { DIFFICULTY } from '../../core/config';
 import {
@@ -8,10 +8,11 @@ import {
   setRecommendations,
   getUsername,
   setUsername,
+  getMode,
+  setMode,
 } from '../../core/profile';
-import type { Difficulty } from '../../core/types';
-import { SCENARIO_INTRO } from '../../scenario/scenario';
-import { STAKEHOLDERS } from '../../scenario/stakeholders';
+import type { Difficulty, Mode } from '../../core/types';
+import { campaignIntro, campaignStakeholders } from '../../scenario/campaign';
 import { Scoreboard } from './Scoreboard';
 import { Credit } from './Credit';
 
@@ -20,6 +21,7 @@ const DIFFS: Difficulty[] = ['easy', 'normal', 'hard'];
 export function StartScreen() {
   const [diff, setDiff] = useState<Difficulty>(getDifficulty());
   const [rec, setRec] = useState<boolean>(getRecommendations());
+  const [mode, setModeState] = useState<Mode>(getMode());
   const [name, setName] = useState<string>(getUsername());
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState(name);
@@ -32,6 +34,14 @@ export function StartScreen() {
     setRec(on);
     setRecommendations(on);
   };
+  const pickMode = (m: Mode) => {
+    setModeState(m);
+    setMode(m);
+  };
+  // Preview the theme on the menu as the side is chosen.
+  useEffect(() => {
+    document.documentElement.classList.toggle('attacker-mode', mode === 'attacker');
+  }, [mode]);
   const saveName = () => {
     const n = draftName.trim().slice(0, 24);
     if (!n) return;
@@ -39,16 +49,42 @@ export function StartScreen() {
     setName(n);
     setEditingName(false);
   };
-  const start = () => store.startGame(diff, rec);
+  const start = () => store.startGame(diff, rec, mode);
 
   return (
     <div className="overlay center scroll">
-      <div className="card start-card">
-        <div className="badge">GDPR Incident Simulator</div>
+      <div className={`card start-card ${mode}`}>
+        <div className="badge">
+          {mode === 'attacker' ? 'Red-Team Kill Chain' : 'GDPR Incident Simulator'}
+        </div>
         <h1>
           Breach<span className="accent">!</span>
         </h1>
-        <p className="lead">{SCENARIO_INTRO}</p>
+
+        <div className="mode-toggle">
+          <button
+            className={`mode-btn ${mode === 'defender' ? 'active' : ''}`}
+            onClick={() => pickMode('defender')}
+          >
+            <span className="mode-emoji">🛡️</span>
+            <span className="mode-text">
+              <strong>Defender</strong>
+              <em>Run the GDPR incident response</em>
+            </span>
+          </button>
+          <button
+            className={`mode-btn villain ${mode === 'attacker' ? 'active' : ''}`}
+            onClick={() => pickMode('attacker')}
+          >
+            <span className="mode-emoji">🦹</span>
+            <span className="mode-text">
+              <strong>Attacker</strong>
+              <em>Run the breach as the adversary</em>
+            </span>
+          </button>
+        </div>
+
+        <p className="lead">{campaignIntro(mode)}</p>
 
         <div className="handle-row">
           {editingName ? (
@@ -84,9 +120,11 @@ export function StartScreen() {
           )}
         </div>
 
-        <h3 className="section-title">👥 Your incident team</h3>
+        <h3 className="section-title">
+          {mode === 'attacker' ? '🦹 Your crew & targets' : '👥 Your incident team'}
+        </h3>
         <div className="roles">
-          {STAKEHOLDERS.map((s) => (
+          {campaignStakeholders(mode).map((s) => (
             <div className="role-chip" key={s.id} title={s.blurb}>
               <span className="role-emoji">{s.emoji}</span>
               <span className="role-text">

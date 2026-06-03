@@ -4,13 +4,22 @@ import { gridToWorld, worldToGrid, isoDepth } from '../iso';
 import { findPath } from '../pathfinding';
 import { Player } from '../entities/Player';
 import { Npc } from '../entities/Npc';
-import { addArt, TEX_RING, TEX_TILE_HI, TEX_RUG, TEX_SHADOW, TEX_GLOW } from '../TextureFactory';
+import {
+  addArt,
+  generateCharacters,
+  TEX_RING,
+  TEX_TILE_HI,
+  TEX_RUG,
+  TEX_SHADOW,
+  TEX_GLOW,
+} from '../TextureFactory';
 import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
 import { sfx } from '../../core/sfx';
 import { STAKEHOLDERS, STAKEHOLDER_BY_ID } from '../../scenario/stakeholders';
-import { PHASE_ORDER } from '../../scenario/scenario';
+import { campaignStakeholders, campaignPhaseOrder } from '../../scenario/campaign';
 import { nodeForStakeholder, stakeholderHasPending } from '../../scenario/scoring';
+import type { Mode } from '../../core/types';
 import { advanceClock } from '../../scenario/scoring';
 import type { Role } from '../../core/types';
 
@@ -72,7 +81,9 @@ export class OfficeScene extends Phaser.Scene {
   private marker!: Phaser.GameObjects.Image;
   private hover!: Phaser.GameObjects.Image;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
-  private wasd?: Record<string, Phaser.Input.Keyboard.Key>;
+  private builtMode: Mode = 'defender';
+  private darkOverlay?: Phaser.GameObjects.Rectangle;
+  private glow?: Phaser.GameObjects.Image;
   private toWorld = (gx: number, gy: number) => {
     const w = gridToWorld(gx, gy);
     return { x: w.x, y: w.y };
@@ -91,11 +102,14 @@ export class OfficeScene extends Phaser.Scene {
     this.addRoomLight();
     this.createMarker();
 
-    // NPCs.
-    this.npcs = STAKEHOLDERS.map((s) => new Npc(this, s, this.toWorld));
+    // NPCs (personas depend on the campaign mode).
+    this.builtMode = store.getState().mode;
+    this.npcs = campaignStakeholders(this.builtMode).map((s) => new Npc(this, s, this.toWorld));
 
     // Player.
     this.player = new Player(this, START_TILE.gx, START_TILE.gy, this.toWorld);
+
+    this.applyTheme(this.builtMode);
 
     // Frame the board and keep it framed on resize.
     this.frameCamera();
@@ -266,13 +280,43 @@ export class OfficeScene extends Phaser.Scene {
   /** A soft warm glow over the room for a cosy, lit feel (additive, very low alpha). */
   private addRoomLight(): void {
     const center = this.toWorld((GRID_SIZE - 1) / 2, (GRID_SIZE - 1) / 2);
-    this.add
+    this.glow = this.add
       .image(center.x, center.y - 10, TEX_GLOW)
       .setTint(0xffe9c2)
       .setAlpha(0.09)
       .setScale(2.4)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setDepth(9999);
+
+    // A dark "villain lair" wash for attacker mode (MULTIPLY dims the whole board).
+    const big = GRID_SIZE * TILE_H * 4;
+    this.darkOverlay = this.add
+      .rectangle(center.x, center.y, big, big, 0x140a24, 1)
+      .setBlendMode(Phaser.BlendModes.MULTIPLY)
+      .setDepth(9998)
+      .setVisible(false);
+  }
+
+  /** Recolour the world for the blue-team office vs the red-team lair. */
+  private applyTheme(mode: Mode): void {
+    const attacker = mode === 'attacker';
+    this.cameras.main.setBackgroundColor(attacker ? '#0b0717' : '#aab4d2');
+    this.darkOverlay?.setVisible(attacker);
+    this.glow?.setTint(attacker ? 0xff3b6b : 0xffe9c2).setAlpha(attacker ? 0.14 : 0.09);
+    // Toggle the page chrome theme (HUD/panels) via a root class.
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('attacker-mode', attacker);
+    }
+  }
+
+  /** Swap NPC personas + theme when a run starts in a different mode than built. */
+  private rebuildForMode(mode: Mode): void {
+    generateCharacters(this, campaignStakeholders(mode));
+    for (const npc of this.npcs) npc.destroy();
+    this.npcs = campaignStakeholders(mode).map((s) => new Npc(this, s, this.toWorld));
+    this.builtMode = mode;
+    this.applyTheme(mode);
+    this.refreshPendingIndicators();
   }
 
   private createMarker(): void {
@@ -363,35 +407,28 @@ export class OfficeScene extends Phaser.Scene {
       }
     });
 
-    // Arrow keys / WASD walk the avatar one tile in a screen direction.
+    // Arrow keys walk the avatar one tile in a screen direction.
     this.cursors = this.input.keyboard?.createCursorKeys();
-    this.wasd = this.input.keyboard?.addKeys({
-      up: Phaser.Input.Keyboard.KeyCodes.W,
-      down: Phaser.Input.Keyboard.KeyCodes.S,
-      left: Phaser.Input.Keyboard.KeyCodes.A,
-      right: Phaser.Input.Keyboard.KeyCodes.D,
-    }) as Record<string, Phaser.Input.Keyboard.Key> | undefined;
   }
 
   // Move one tile per step in the pressed screen direction (iso diagonal in grid
   // space). Holding a key keeps stepping once the previous tile tween finishes.
   private tryKeyboardMove(): void {
     if (this.player.moving) return;
-    const down = (k?: Phaser.Input.Keyboard.Key) => !!k?.isDown;
     const c = this.cursors;
-    const w = this.wasd;
+    if (!c) return;
     let dgx = 0;
     let dgy = 0;
-    if (down(c?.up) || down(w?.up)) {
+    if (c.up.isDown) {
       dgx = -1;
       dgy = -1;
-    } else if (down(c?.down) || down(w?.down)) {
+    } else if (c.down.isDown) {
       dgx = 1;
       dgy = 1;
-    } else if (down(c?.left) || down(w?.left)) {
+    } else if (c.left.isDown) {
       dgx = -1;
       dgy = 1;
-    } else if (down(c?.right) || down(w?.right)) {
+    } else if (c.right.isDown) {
       dgx = 1;
       dgy = -1;
     } else {
@@ -442,8 +479,12 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private onStateChanged(): void {
+    const state = store.getState();
+    if (state.gamePhase === 'playing' && state.mode !== this.builtMode) {
+      this.rebuildForMode(state.mode);
+    }
     this.refreshPendingIndicators();
-    if (store.getState().gamePhase === 'start') this.resetWorld();
+    if (state.gamePhase === 'start') this.resetWorld();
   }
 
   private refreshPendingIndicators(): void {
@@ -457,7 +498,7 @@ export class OfficeScene extends Phaser.Scene {
     this.npcs.forEach((npc, i) => {
       if (!pendings[i]) return;
       const node = nodeForStakeholder(state, npc.info.id);
-      const rank = node ? PHASE_ORDER.indexOf(node.phase) : 99;
+      const rank = node ? campaignPhaseOrder(state.mode).indexOf(node.phase) : 99;
       if (rank < targetRank) {
         targetRank = rank;
         target = npc;

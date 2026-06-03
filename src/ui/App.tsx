@@ -43,13 +43,17 @@ export function App() {
           {!state.activeDialogue && !state.activeInject && (
             <div className="side-rail">
               <ZoomControls />
-              <NetworkButton onOpen={() => setMapOpen(true)} />
+              {state.mode === 'defender' && (
+                <NetworkButton onOpen={() => setMapOpen(true)} />
+              )}
             </div>
           )}
           {!state.activeDialogue && !state.activeInject && state.npcInRange && (
             <TalkPrompt npcId={state.npcInRange} />
           )}
-          {mapOpen && <ContainmentMap onClose={() => setMapOpen(false)} />}
+          {mapOpen && state.mode === 'defender' && (
+            <ContainmentMap onClose={() => setMapOpen(false)} />
+          )}
           {state.activeDialogue && <DialoguePanel npcId={state.activeDialogue.npcId} />}
           {state.activeInject && <InjectModal injectId={state.activeInject.id} />}
         </>

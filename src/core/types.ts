@@ -5,11 +5,25 @@ import type { NetworkState } from '../scenario/network';
 
 export type Role = 'tech' | 'management' | 'ciso' | 'dpo' | 'regulator' | 'customer';
 
-export type Phase = 'detection' | 'containment' | 'assessment' | 'notification' | 'resolution';
+// Defender phases follow incident response; attacker phases follow the kill chain.
+export type Phase =
+  | 'detection'
+  | 'containment'
+  | 'assessment'
+  | 'notification'
+  | 'resolution'
+  | 'recon'
+  | 'access'
+  | 'escalation'
+  | 'exfiltration'
+  | 'coverup';
 
 export type GamePhase = 'start' | 'playing' | 'ended';
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
+
+/** Which side the player runs: blue-team incident response, or red-team kill chain. */
+export type Mode = 'defender' | 'attacker';
 
 /** Meters shown in the HUD. All 0..100. `cost` is "money/effort spent" (higher = worse). */
 export interface Meters {
@@ -36,7 +50,12 @@ export type EndingId =
   | 'compliant_costly'
   | 'reputational_damage'
   | 'regulatory_breach'
-  | 'coverup_exposed';
+  | 'coverup_exposed'
+  // Attacker-campaign endings.
+  | 'ghost'
+  | 'smash_grab'
+  | 'caught'
+  | 'burned';
 
 export interface Ending {
   id: EndingId;
@@ -48,7 +67,9 @@ export interface Ending {
 export interface GameState {
   gamePhase: GamePhase;
   difficulty: Difficulty;
-  /** When true, the GDPR-recommended choice is highlighted in dialogs (chosen at start). */
+  /** Blue-team (defender) or red-team (attacker) campaign. */
+  mode: Mode;
+  /** When true, the recommended choice is highlighted in dialogs (chosen at start). */
   recommendations: boolean;
   phase: Phase;
   clock: Clock;

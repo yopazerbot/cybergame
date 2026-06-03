@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import type { Role } from '../../core/types';
-import { STAKEHOLDER_BY_ID } from '../../scenario/stakeholders';
 import { store } from '../../core/store';
 import { nodeForStakeholder, resolveChoice } from '../../scenario/scoring';
 import { recommendedChoiceId, type Choice } from '../../scenario/scenario';
+import { campaignStakeholderById, meterLabels } from '../../scenario/campaign';
 
 export function DialoguePanel({ npcId }: { npcId: Role }) {
-  const s = STAKEHOLDER_BY_ID[npcId];
+  const mode = store.getState().mode;
+  const s = campaignStakeholderById(mode)[npcId];
   const node = nodeForStakeholder(store.getState(), npcId);
   const [picked, setPicked] = useState<Choice | null>(null);
   const showRecs = store.getState().recommendations;
   const recId = node && showRecs ? recommendedChoiceId(node) : null;
+  const portraitColor = '#' + s.colors.body.toString(16).padStart(6, '0');
 
   const close = () => store.setState({ ...store.getState(), activeDialogue: null });
 
   return (
     <div className="overlay bottom">
       <div className="card dialogue">
-        <div className="dialogue-portrait" style={{ background: portraitBg(npcId) }}>
+        <div className="dialogue-portrait" style={{ background: portraitColor }}>
           <span>{s.emoji}</span>
         </div>
         <div className="dialogue-body">
@@ -80,10 +82,11 @@ export function DialoguePanel({ npcId }: { npcId: Role }) {
 
 function EffectsRow({ choice }: { choice: Choice }) {
   const e = choice.effects;
+  const ml = meterLabels(store.getState().mode);
   const items: { label: string; v: number; invert?: boolean }[] = [];
-  if (e.compliance) items.push({ label: 'Compliance', v: e.compliance });
-  if (e.reputation) items.push({ label: 'Reputation', v: e.reputation });
-  if (e.cost) items.push({ label: 'Cost', v: e.cost, invert: true });
+  if (e.compliance) items.push({ label: ml.compliance.label, v: e.compliance });
+  if (e.reputation) items.push({ label: ml.reputation.label, v: e.reputation });
+  if (e.cost) items.push({ label: ml.cost.label, v: e.cost, invert: true });
   return (
     <div className="effects">
       {items.map((it) => {
@@ -101,21 +104,14 @@ function EffectsRow({ choice }: { choice: Choice }) {
 }
 
 function tagClass(tag: string): string {
-  if (tag.includes('best')) return 'good';
+  if (tag.includes('best') || tag.includes('quiet')) return 'good';
   if (tag.includes('critical')) return 'bad';
-  if (tag.includes('risky') || tag.includes('insufficient') || tag.includes('destroys'))
+  if (
+    tag.includes('risky') ||
+    tag.includes('insufficient') ||
+    tag.includes('destroys') ||
+    tag.includes('loud')
+  )
     return 'warn';
   return 'note';
-}
-
-function portraitBg(role: Role): string {
-  const map: Record<Role, string> = {
-    tech: '#3aa6b9',
-    ciso: '#6c5ce7',
-    dpo: '#00b894',
-    management: '#e17055',
-    regulator: '#636e72',
-    customer: '#d8a93f',
-  };
-  return map[role];
 }

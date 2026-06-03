@@ -7,6 +7,11 @@ const ENDING_ICON: Record<string, string> = {
   reputational_damage: '😬',
   regulatory_breach: '⚖️',
   coverup_exposed: '🚨',
+  // Attacker endings.
+  ghost: '👻',
+  smash_grab: '💰',
+  caught: '🚔',
+  burned: '🔥',
 };
 
 const DIFF_ICON: Record<string, string> = { easy: '🟢', normal: '🟡', hard: '🔴' };

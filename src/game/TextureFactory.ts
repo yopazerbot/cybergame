@@ -458,7 +458,15 @@ export function generateTextures(scene: Phaser.Scene): void {
   });
 
   makeCharacter(scene, CHAR_PLAYER, 0x2d6cdf, 0x163a82);
-  for (const s of STAKEHOLDERS) {
+  generateCharacters(scene, STAKEHOLDERS);
+}
+
+/** (Re)generate the per-stakeholder avatar textures — used to swap personas by mode. */
+export function generateCharacters(
+  scene: Phaser.Scene,
+  stakeholders: { id: string; colors: { body: number; accent: number } }[],
+): void {
+  for (const s of stakeholders) {
     makeCharacter(scene, `char_${s.id}`, s.colors.body, s.colors.accent, s.id);
   }
 }

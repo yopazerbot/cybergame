@@ -150,6 +150,13 @@ export class Npc extends Phaser.GameObjects.Container {
     if (on) this.ring.setAlpha(0.75);
   }
 
+  // Kill tweens targeting our children before teardown (mode switch rebuilds NPCs),
+  // otherwise the tween manager keeps ticking destroyed objects and throws.
+  destroy(fromScene?: boolean): void {
+    this.scene?.tweens.killTweensOf(this.list);
+    super.destroy(fromScene);
+  }
+
   setPending(pending: boolean): void {
     this.ring.setAlpha(pending ? (this.isNext ? 0.75 : 0.55) : 0.0);
     this.arrow.setVisible(pending);

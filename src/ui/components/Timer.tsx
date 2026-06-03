@@ -1,8 +1,10 @@
-import type { Clock } from '../../core/types';
+import type { Clock, Mode } from '../../core/types';
 import { TIMER_AMBER_HOURS, TIMER_RED_HOURS } from '../../core/config';
+import { timerLabel } from '../../scenario/campaign';
 
-// Circular countdown ring for the GDPR Article 33 72-hour notification window.
-export function Timer({ clock }: { clock: Clock }) {
+// Circular countdown ring: GDPR Art. 33 window (defender) or detection window (attacker).
+export function Timer({ clock, mode }: { clock: Clock; mode: Mode }) {
+  const label = timerLabel(mode);
   const remaining = Math.max(0, clock.deadlineHours - clock.hoursElapsed);
   const hh = Math.floor(remaining);
   const mm = Math.floor((remaining - hh) * 60);
@@ -39,8 +41,8 @@ export function Timer({ clock }: { clock: Clock }) {
         </div>
       </div>
       <div className="timer-meta">
-        <div className="timer-label">GDPR · Art. 33</div>
-        <div className="timer-sub">72h notification window</div>
+        <div className="timer-label">{label.title}</div>
+        <div className="timer-sub">{label.sub}</div>
       </div>
     </div>
   );

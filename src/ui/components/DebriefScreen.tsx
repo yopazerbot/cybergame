@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../useStore';
 import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
-import { GDPR_DEBRIEF } from '../../scenario/debrief';
+import { campaignDebrief } from '../../scenario/campaign';
 import { getUsername, unlockAchievements } from '../../core/profile';
 import { submitScore, type ScoreEntry } from '../../core/api';
 import { scoreBreakdown } from '../../scenario/scoring';
@@ -88,33 +88,41 @@ export function DebriefScreen() {
           ))}
         </div>
 
-        <h3 className="debrief-title">
-          Achievements <span className="ach-count">{earned.length}/7</span>
-        </h3>
-        {earned.length === 0 ? (
-          <p className="ach-empty">No achievements this run — try a cleaner, faster response.</p>
-        ) : (
-          <div className="ach-grid">
-            {earned.map((a) => (
-              <div
-                className={`ach-card ${freshAchievements.includes(a.id) ? 'fresh' : ''}`}
-                key={a.id}
-                title={a.desc}
-              >
-                <span className="ach-icon">{a.icon}</span>
-                <span className="ach-text">
-                  <strong>{a.title}</strong>
-                  <em>{a.desc}</em>
-                </span>
-                {freshAchievements.includes(a.id) && <span className="ach-new">NEW</span>}
+        {state.mode === 'defender' && (
+          <>
+            <h3 className="debrief-title">
+              Achievements <span className="ach-count">{earned.length}/7</span>
+            </h3>
+            {earned.length === 0 ? (
+              <p className="ach-empty">No achievements this run — try a cleaner, faster response.</p>
+            ) : (
+              <div className="ach-grid">
+                {earned.map((a) => (
+                  <div
+                    className={`ach-card ${freshAchievements.includes(a.id) ? 'fresh' : ''}`}
+                    key={a.id}
+                    title={a.desc}
+                  >
+                    <span className="ach-icon">{a.icon}</span>
+                    <span className="ach-text">
+                      <strong>{a.title}</strong>
+                      <em>{a.desc}</em>
+                    </span>
+                    {freshAchievements.includes(a.id) && <span className="ach-new">NEW</span>}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
-        <h3 className="debrief-title">What good GDPR incident response looks like</h3>
+        <h3 className="debrief-title">
+          {state.mode === 'attacker'
+            ? 'How defenders detect & stop this kill chain'
+            : 'What good GDPR incident response looks like'}
+        </h3>
         <div className="debrief-list">
-          {GDPR_DEBRIEF.map((item) => (
+          {campaignDebrief(state.mode).map((item) => (
             <div className="debrief-item" key={item.heading}>
               <h4>{item.heading}</h4>
               <p>{item.body}</p>
@@ -153,7 +161,9 @@ export function DebriefScreen() {
         </div>
 
         <p className="disclaimer">
-          Educational simulation — a simplified model of GDPR Articles 33 & 34, not legal advice.
+          {state.mode === 'attacker'
+            ? 'Educational red-team simulation — a strategic model of the MITRE ATT&CK kill chain, to help defenders, not a how-to.'
+            : 'Educational simulation — a simplified model of GDPR Articles 33 & 34, not legal advice.'}
         </p>
 
         <button className="btn primary big" onClick={playAgain}>

@@ -1,9 +1,18 @@
-import type { GameState, Phase, Role, Ending } from '../core/types';
+import type { GameState, Mode, Phase, Role, Ending } from '../core/types';
 import { SCORE_WEIGHTS, DIFFICULTY } from '../core/config';
 import { store } from '../core/store';
 import { eventBus } from '../core/eventBus';
 import { sfx } from '../core/sfx';
-import { NODES, NODE_BY_ID, PHASE_ORDER, type DecisionNode } from './scenario';
+import { type DecisionNode } from './scenario';
+import {
+  campaignNodes,
+  campaignNodeById,
+  campaignPhaseOrder,
+  finishNodeId,
+  idealRun,
+  deadlineFail,
+  meterLabels,
+} from './campaign';
 import { INJECTS, INJECT_BY_ID, type Inject } from './injects';
 import {
   tickNetwork,
@@ -18,7 +27,7 @@ import {
 // Pure-ish resolver: the only place that turns a player choice into new state.
 
 const clamp = (v: number) => Math.max(0, Math.min(100, v));
-const phaseIdx = (p: Phase) => PHASE_ORDER.indexOf(p);
+const phaseIdx = (p: Phase, mode: Mode) => campaignPhaseOrder(mode).indexOf(p);
 
 function flagsSatisfied(state: GameState, required?: string[]): boolean {
   return !required || required.every((f) => state.flags[f]);
@@ -27,13 +36,13 @@ function flagsSatisfied(state: GameState, required?: string[]): boolean {
 /** A node is available if its phase has been reached, prereqs are met, and it isn't already resolved. */
 export function isNodeAvailable(state: GameState, node: DecisionNode): boolean {
   if (node.oneShot && state.resolvedNodes.includes(node.id)) return false;
-  if (phaseIdx(node.phase) > phaseIdx(state.phase)) return false;
+  if (phaseIdx(node.phase, state.mode) > phaseIdx(state.phase, state.mode)) return false;
   return flagsSatisfied(state, node.requireFlags);
 }
 
 /** The next decision an NPC currently offers (or null). Drives dialogue + the "!" indicator. */
 export function nodeForStakeholder(state: GameState, role: Role): DecisionNode | null {
-  return NODES.find((n) => n.stakeholder === role && isNodeAvailable(state, n)) ?? null;
+  return campaignNodes(state.mode).find((n) => n.stakeholder === role && isNodeAvailable(state, n)) ?? null;
 }
 
 export function stakeholderHasPending(state: GameState, role: Role): boolean {
@@ -41,7 +50,7 @@ export function stakeholderHasPending(state: GameState, role: Role): boolean {
 }
 
 function anyNodesLeft(state: GameState): boolean {
-  return NODES.some((n) => isNodeAvailable(state, n));
+  return campaignNodes(state.mode).some((n) => isNodeAvailable(state, n));
 }
 
 function computeScore(state: GameState): number {
@@ -54,14 +63,8 @@ function computeScore(state: GameState): number {
     w.cost * meters.cost +
     w.timeRemaining * hoursRemaining;
 
-  // Ideal-sequence bonus: contained & assessed *before* notifying.
-  const idealOrder =
-    state.flags.breachContained &&
-    state.flags.scopeKnown &&
-    state.flags.dpoConsulted &&
-    state.flags.regulatorNotified &&
-    !state.flags.coverup;
-  if (idealOrder) score += w.orderBonus;
+  // Ideal-sequence bonus for a clean, in-order run.
+  if (idealRun(state)) score += w.orderBonus;
 
   return Math.round(score);
 }
@@ -76,24 +79,72 @@ export function scoreBreakdown(state: GameState): ScorePart[] {
   const { meters, clock } = state;
   const w = SCORE_WEIGHTS;
   const hoursRemaining = Math.max(0, clock.deadlineHours - clock.hoursElapsed);
-  const idealOrder =
-    state.flags.breachContained &&
-    state.flags.scopeKnown &&
-    state.flags.dpoConsulted &&
-    state.flags.regulatorNotified &&
-    !state.flags.coverup;
+  const ml = meterLabels(state.mode);
 
   const parts: ScorePart[] = [
-    { label: 'Compliance', value: Math.round(w.compliance * meters.compliance) },
-    { label: 'Reputation', value: Math.round(w.reputation * meters.reputation) },
-    { label: 'Cost', value: -Math.round(w.cost * meters.cost) },
+    { label: ml.compliance.label, value: Math.round(w.compliance * meters.compliance) },
+    { label: ml.reputation.label, value: Math.round(w.reputation * meters.reputation) },
+    { label: ml.cost.label, value: -Math.round(w.cost * meters.cost) },
     { label: 'Time remaining', value: Math.round(w.timeRemaining * hoursRemaining) },
   ];
-  if (idealOrder) parts.push({ label: 'Ideal-sequence bonus', value: w.orderBonus });
+  if (idealRun(state)) parts.push({ label: 'Ideal-sequence bonus', value: w.orderBonus });
   return parts;
 }
 
 export function computeEnding(state: GameState): Ending {
+  return state.mode === 'attacker' ? attackerEnding(state) : defenderEnding(state);
+}
+
+/** Red-team endings: did you get the data and vanish, or get burned/caught? */
+function attackerEnding(state: GameState): Ending {
+  const f = state.flags;
+  const { compliance: stealth, reputation: loot, cost: heat } = state.meters;
+
+  if (!f.dataExfiltrated) {
+    return {
+      id: 'burned',
+      title: 'Burned',
+      tone: 'bad',
+      flavor:
+        'The intrusion stalled before you reached the data — detected and evicted while you were ' +
+        'still moving. From the defenders’ side, this is the win: catch the kill chain early, ' +
+        'before exfiltration, and the breach never happens.',
+    };
+  }
+  if (f.gotCaught || !f.tracksCovered) {
+    return {
+      id: 'caught',
+      title: 'Caught in the Act',
+      tone: 'bad',
+      flavor:
+        'You got the records, but left a forensic trail — log artefacts, tooling and timing the ' +
+        'SOC stitched into attribution. Immutable off-host logging and forensic readiness are why ' +
+        'a noisy exit ends in an indictment.',
+    };
+  }
+  if (stealth >= 70 && heat <= 40 && loot >= 60) {
+    return {
+      id: 'ghost',
+      title: 'Ghost in the Machine',
+      tone: 'good',
+      flavor:
+        'In, escalated, exfiltrated and gone — quiet enough that detection lagged the whole way. ' +
+        'This clean run is exactly the scenario blue teams train against: defence-in-depth, EDR, ' +
+        'DLP and immutable logging exist to make this outcome impossible.',
+    };
+  }
+  return {
+    id: 'smash_grab',
+    title: 'Smash & Grab',
+    tone: 'mixed',
+    flavor:
+      'You walked away with the data, but loudly — spikes, alerts and signatures that a competent ' +
+      'SOC would have caught in time. Profitable, but the noise is what gets crews like yours ' +
+      'identified and dismantled.',
+  };
+}
+
+function defenderEnding(state: GameState): Ending {
   const f = state.flags;
   const missedDeadline = !f.regulatorNotified;
 
@@ -166,7 +217,7 @@ function endGame(state: GameState): void {
 /** Apply a player's choice. */
 export function resolveChoice(nodeId: string, choiceId: string): void {
   const state = store.getState();
-  const node = NODE_BY_ID[nodeId];
+  const node = campaignNodeById(state.mode)[nodeId];
   const choice = node?.choices.find((c) => c.id === choiceId);
   if (!node || !choice) return;
 
@@ -186,7 +237,8 @@ export function resolveChoice(nodeId: string, choiceId: string): void {
   };
 
   let phase = state.phase;
-  const phaseAdvanced = e.advancePhaseTo && phaseIdx(e.advancePhaseTo) > phaseIdx(phase);
+  const phaseAdvanced =
+    e.advancePhaseTo && phaseIdx(e.advancePhaseTo, state.mode) > phaseIdx(phase, state.mode);
   if (phaseAdvanced) phase = e.advancePhaseTo!;
 
   const resolvedNodes = node.oneShot
@@ -214,8 +266,8 @@ export function resolveChoice(nodeId: string, choiceId: string): void {
   }
 
   // End conditions.
-  const deadlineMissed = next.clock.hoursElapsed >= next.clock.deadlineHours && !flags.regulatorNotified;
-  const finished = nodeId === 'mgmt_remediation' || !anyNodesLeft(next);
+  const deadlineMissed = next.clock.hoursElapsed >= next.clock.deadlineHours && deadlineFail(next);
+  const finished = nodeId === finishNodeId(state.mode) || !anyNodesLeft(next);
 
   if (deadlineMissed || finished) {
     endGame(next);
@@ -227,9 +279,10 @@ export function resolveChoice(nodeId: string, choiceId: string): void {
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function emitChoiceToast(e: { compliance?: number; reputation?: number }): void {
+  const ml = meterLabels(store.getState().mode);
   const parts: string[] = [];
-  if (e.compliance) parts.push(`${e.compliance > 0 ? '+' : ''}${e.compliance} Compliance`);
-  if (e.reputation) parts.push(`${e.reputation > 0 ? '+' : ''}${e.reputation} Reputation`);
+  if (e.compliance) parts.push(`${e.compliance > 0 ? '+' : ''}${e.compliance} ${ml.compliance.label}`);
+  if (e.reputation) parts.push(`${e.reputation > 0 ? '+' : ''}${e.reputation} ${ml.reputation.label}`);
   if (parts.length === 0) return;
   const tone = (e.compliance ?? 0) + (e.reputation ?? 0) >= 0 ? 'good' : 'bad';
   eventBus.emit('notify', { text: parts.join('  ·  '), tone });
@@ -239,18 +292,21 @@ function emitChoiceToast(e: { compliance?: number; reputation?: number }): void 
 export function advanceClock(hours: number): void {
   const state = store.getState();
   if (state.gamePhase !== 'playing' || state.activeDialogue || state.activeInject) return;
+  const isDefender = state.mode === 'defender';
   const clock = { ...state.clock, hoursElapsed: state.clock.hoursElapsed + hours };
-  const network = tickNetwork(state.network, hours);
-  let next: GameState = applyNetworkTransitions(state, { ...state, clock, network });
+  // The live intrusion sim is the defender's containment minigame only.
+  let next: GameState = isDefender
+    ? applyNetworkTransitions(state, { ...state, clock, network: tickNetwork(state.network, hours) })
+    : { ...state, clock };
   next = { ...next, score: computeScore(next) };
 
-  if (next.clock.hoursElapsed >= next.clock.deadlineHours && !next.flags.regulatorNotified) {
+  if (next.clock.hoursElapsed >= next.clock.deadlineHours && deadlineFail(next)) {
     endGame(next);
     return;
   }
 
-  // Maybe interrupt with a timed crisis inject.
-  const inject = pickEligibleInject(next);
+  // Maybe interrupt with a timed crisis inject (defender campaign only).
+  const inject = isDefender ? pickEligibleInject(next) : null;
   if (inject) {
     next = { ...next, activeInject: { id: inject.id }, firedInjects: [...next.firedInjects, inject.id] };
     eventBus.emit('notify', { text: `Incoming: ${inject.kicker}`, tone: 'bad' });
@@ -292,7 +348,7 @@ function commitNetwork(net: NetworkState, spec: { hours: number; cost: number })
   let next: GameState = applyNetworkTransitions(state, { ...state, network: net, meters, clock });
   next = { ...next, score: computeScore(next) };
 
-  if (next.clock.hoursElapsed >= next.clock.deadlineHours && !next.flags.regulatorNotified) {
+  if (next.clock.hoursElapsed >= next.clock.deadlineHours && deadlineFail(next)) {
     endGame(next);
   } else {
     store.setState(next);
@@ -358,7 +414,7 @@ export function resolveInject(injectId: string, choiceId: string): void {
   emitChoiceToast(e);
   eventBus.emit('notify', { text: choice.feedback, tone: netGood ? 'good' : 'bad' });
 
-  const deadlineMissed = next.clock.hoursElapsed >= next.clock.deadlineHours && !flags.regulatorNotified;
+  const deadlineMissed = next.clock.hoursElapsed >= next.clock.deadlineHours && deadlineFail(next);
   if (deadlineMissed) endGame(next);
   else store.setState(next);
 }

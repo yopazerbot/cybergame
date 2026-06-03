@@ -1,4 +1,4 @@
-import type { GameState, Difficulty } from './types';
+import type { GameState, Difficulty, Mode } from './types';
 import { DIFFICULTY, DEADLINE_HOURS } from './config';
 import { eventBus } from './eventBus';
 import { buildObjectives } from '../scenario/objectives';
@@ -7,13 +7,18 @@ import { initialNetwork } from '../scenario/network';
 // Tiny observable store — the single source of truth.
 // Phaser and React both read via getState() and subscribe via subscribe().
 
-function initialState(difficulty: Difficulty = 'normal', recommendations = true): GameState {
+function initialState(
+  difficulty: Difficulty = 'normal',
+  recommendations = true,
+  mode: Mode = 'defender',
+): GameState {
   const d = DIFFICULTY[difficulty];
   return {
     gamePhase: 'start',
     difficulty,
+    mode,
     recommendations,
-    phase: 'detection',
+    phase: mode === 'attacker' ? 'recon' : 'detection',
     clock: { hoursElapsed: 0, deadlineHours: DEADLINE_HOURS },
     meters: { reputation: d.reputation, compliance: d.compliance, cost: d.cost },
     score: 0,
@@ -54,8 +59,8 @@ class Store {
   }
 
   /** Begin a fresh run at the chosen difficulty. */
-  startGame(difficulty: Difficulty, recommendations = true): void {
-    this.state = initialState(difficulty, recommendations);
+  startGame(difficulty: Difficulty, recommendations = true, mode: Mode = 'defender'): void {
+    this.state = initialState(difficulty, recommendations, mode);
     this.state.gamePhase = 'playing';
     this.state.objectives = buildObjectives(this.state);
     this.listeners.forEach((l) => l(this.state));
@@ -63,7 +68,7 @@ class Store {
   }
 
   reset(): void {
-    this.state = initialState(this.state.difficulty, this.state.recommendations);
+    this.state = initialState(this.state.difficulty, this.state.recommendations, this.state.mode);
     this.state.objectives = buildObjectives(this.state);
     this.listeners.forEach((l) => l(this.state));
     eventBus.emit('stateChanged', undefined);
