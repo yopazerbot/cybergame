@@ -3,6 +3,9 @@
 export const TILE_W = 64;
 export const TILE_H = 32;
 
+/** Top-down square tile size (px). */
+export const TILE = 48;
+
 /** Office floor grid size (square). */
 export const GRID_SIZE = 12;
 

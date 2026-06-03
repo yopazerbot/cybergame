@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
-import { GRID_SIZE, TILE_H, HOURS_PER_REAL_SECOND } from '../../core/config';
-import { gridToWorld, worldToGrid, isoDepth } from '../iso';
+import { GRID_SIZE, TILE, HOURS_PER_REAL_SECOND } from '../../core/config';
+import { gridToWorld, worldToGrid } from '../iso';
 import { findPath } from '../pathfinding';
 import { Player } from '../entities/Player';
 import { Npc } from '../entities/Npc';
@@ -9,27 +9,30 @@ import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
 import { sfx } from '../../core/sfx';
 import { STAKEHOLDERS, STAKEHOLDER_BY_ID } from '../../scenario/stakeholders';
-import { nodeForStakeholder, stakeholderHasPending } from '../../scenario/scoring';
-import { advanceClock } from '../../scenario/scoring';
+import { nodeForStakeholder, stakeholderHasPending, advanceClock } from '../../scenario/scoring';
 import type { Role } from '../../core/types';
 
-// Decorative / blocking furniture: tile -> texture key.
 const FURNITURE: { gx: number; gy: number; key: string }[] = [
-  { gx: 5, gy: 5, key: 'desk' },
-  { gx: 6, gy: 5, key: 'desk' },
-  { gx: 3, gy: 1, key: 'server' },
-  { gx: 4, gy: 1, key: 'server' },
+  { gx: 1, gy: 1, key: 'server' },
+  { gx: 1, gy: 2, key: 'server' },
   { gx: 8, gy: 1, key: 'cabinet' },
-  { gx: 10, gy: 1, key: 'cooler' },
-  { gx: 1, gy: 11, key: 'plant' },
-  { gx: 11, gy: 11, key: 'plant' },
-  { gx: 1, gy: 6, key: 'plant' },
-  { gx: 1, gy: 8, key: 'plant' },
-  { gx: 11, gy: 9, key: 'plant' },
+  { gx: 9, gy: 1, key: 'cooler' },
+  { gx: 5, gy: 4, key: 'desk' },
+  { gx: 6, gy: 4, key: 'desk' },
+  { gx: 5, gy: 6, key: 'desk' },
+  { gx: 6, gy: 6, key: 'desk' },
+  { gx: 1, gy: 5, key: 'sofa' },
+  { gx: 1, gy: 6, key: 'sofa' },
+  { gx: 1, gy: 10, key: 'plant' },
+  { gx: 10, gy: 10, key: 'plant' },
+  { gx: 10, gy: 1, key: 'plant' },
 ];
 
-const ACCENT_TILES = new Set(['5,6', '6,6', '5,7', '6,7']);
-const START_TILE = { gx: 7, gy: 7 };
+const START_TILE = { gx: 3, gy: 5 };
+
+const FLOOR_DEPTH = -100000;
+const RUG_DEPTH = -90000;
+const MARKER_DEPTH = -80000;
 
 export class OfficeScene extends Phaser.Scene {
   private player!: Player;
@@ -38,10 +41,7 @@ export class OfficeScene extends Phaser.Scene {
   private npcTiles = new Set<string>();
   private marker!: Phaser.GameObjects.Image;
   private hover!: Phaser.GameObjects.Image;
-  private toWorld = (gx: number, gy: number) => {
-    const w = gridToWorld(gx, gy);
-    return { x: w.x, y: w.y };
-  };
+  private toWorld = (gx: number, gy: number) => gridToWorld(gx, gy);
 
   constructor() {
     super('Office');
@@ -51,16 +51,12 @@ export class OfficeScene extends Phaser.Scene {
     this.buildBlockedSet();
     this.drawFloor();
     this.drawStationRugs();
-    this.drawWallsAndFurniture();
     this.createMarker();
+    this.drawWallsAndFurniture();
 
-    // NPCs.
     this.npcs = STAKEHOLDERS.map((s) => new Npc(this, s, this.toWorld));
+    this.player = new Player(this, START_TILE.gx, START_TILE.gy, this.toWorld, 'char_0');
 
-    // Player.
-    this.player = new Player(this, START_TILE.gx, START_TILE.gy, this.toWorld);
-
-    // Frame the board and keep it framed on resize.
     this.frameCamera();
     this.scale.on('resize', this.frameCamera, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
@@ -68,11 +64,9 @@ export class OfficeScene extends Phaser.Scene {
     );
 
     this.setupInput();
-
     eventBus.on('requestDialogue', ({ npcId }) => this.openDialogue(npcId));
     eventBus.on('stateChanged', () => this.onStateChanged());
     eventBus.on('restart', () => this.resetWorld());
-
     this.refreshPendingIndicators();
   }
 
@@ -83,7 +77,7 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private isWall(gx: number, gy: number): boolean {
-    return gx === 0 || gy === 0;
+    return gx === 0 || gy === 0 || gx === GRID_SIZE - 1 || gy === GRID_SIZE - 1;
   }
 
   private isWalkable = (gx: number, gy: number): boolean => {
@@ -97,96 +91,70 @@ export class OfficeScene extends Phaser.Scene {
   private drawFloor(): void {
     for (let gx = 0; gx < GRID_SIZE; gx++) {
       for (let gy = 0; gy < GRID_SIZE; gy++) {
-        if (this.isWall(gx, gy)) continue;
         const { x, y } = this.toWorld(gx, gy);
-        let key = (gx + gy) % 2 === 0 ? 'floor_a' : 'floor_b';
-        if (ACCENT_TILES.has(`${gx},${gy}`)) key = 'floor_accent';
-        this.add.image(x, y, key).setOrigin(0.5, 0.5).setDepth(isoDepth(gx, gy, -2));
+        const key = (gx + gy) % 2 === 0 ? 'floor_a' : 'floor_b';
+        this.add.image(x, y, key).setDepth(FLOOR_DEPTH);
       }
     }
   }
 
-  /** Colour-codes each stakeholder's "station" so areas read at a glance. */
   private drawStationRugs(): void {
     const c = (GRID_SIZE - 1) / 2;
     for (const s of STAKEHOLDERS) {
-      const dirx = Math.sign(c - s.grid.gx);
-      const diry = Math.sign(c - s.grid.gy);
+      const dx = Math.sign(c - s.grid.gx);
+      const dy = Math.sign(c - s.grid.gy);
       const tiles = [
         { gx: s.grid.gx, gy: s.grid.gy },
-        { gx: s.grid.gx + dirx, gy: s.grid.gy },
-        { gx: s.grid.gx, gy: s.grid.gy + diry },
+        { gx: s.grid.gx + dx, gy: s.grid.gy },
+        { gx: s.grid.gx, gy: s.grid.gy + dy },
       ];
       for (const t of tiles) {
-        if (t.gx <= 0 || t.gy <= 0 || t.gx >= GRID_SIZE || t.gy >= GRID_SIZE) continue;
+        if (this.isWall(t.gx, t.gy)) continue;
         const { x, y } = this.toWorld(t.gx, t.gy);
-        this.add
-          .image(x, y, TEX_RUG)
-          .setOrigin(0.5, 0.5)
-          .setTint(s.colors.body)
-          .setAlpha(0.22)
-          .setDepth(isoDepth(t.gx, t.gy, -1));
+        this.add.image(x, y, TEX_RUG).setTint(s.colors.body).setAlpha(0.2).setDepth(RUG_DEPTH);
       }
     }
   }
 
-  private frameCamera(): void {
-    const cam = this.cameras.main;
-    const center = this.toWorld((GRID_SIZE - 1) / 2, (GRID_SIZE - 1) / 2);
-    // Fit the room to ~85% of the viewport so it fills the screen like a real room.
-    const boardW = GRID_SIZE * TILE_H * 2; // diamond width ≈ GRID*TILE_W
-    const boardH = GRID_SIZE * TILE_H + 150; // floor depth + wall/character height
-    const zoom = Phaser.Math.Clamp(
-      Math.min((cam.width * 0.86) / boardW, (cam.height * 0.86) / boardH),
-      0.55,
-      2.0,
-    );
-    cam.setZoom(zoom);
-    cam.centerOn(center.x, center.y - 6);
-  }
-
   private drawWallsAndFurniture(): void {
-    // Back walls along gx=0 and gy=0.
-    for (let i = 0; i < GRID_SIZE; i++) {
-      this.placeBox(0, i, 'wall');
-      this.placeBox(i, 0, 'wall');
+    for (let gx = 0; gx < GRID_SIZE; gx++) {
+      for (let gy = 0; gy < GRID_SIZE; gy++) {
+        if (!this.isWall(gx, gy)) continue;
+        const { x, y } = this.toWorld(gx, gy);
+        this.add.image(x, y, 'wall').setDepth(y);
+      }
     }
     for (const f of FURNITURE) {
       const { x, y } = this.toWorld(f.gx, f.gy);
-      this.add.image(x, y, TEX_SHADOW).setOrigin(0.5, 0.5).setDepth(isoDepth(f.gx, f.gy, 0));
-      this.placeBox(f.gx, f.gy, f.key);
+      this.add.image(x, y + TILE * 0.3, TEX_SHADOW).setDepth(y - 1);
+      this.add.image(x, y, f.key).setDepth(y);
     }
   }
 
-  private placeBox(gx: number, gy: number, key: string): void {
-    const { x, y } = this.toWorld(gx, gy);
-    // Origin (0.5,1) at the tile's bottom vertex makes the footprint overlay the floor tile.
-    this.add
-      .image(x, y + TILE_H / 2, key)
-      .setOrigin(0.5, 1)
-      .setDepth(isoDepth(gx, gy, 1));
-  }
-
   private createMarker(): void {
-    this.hover = this.add
-      .image(0, 0, TEX_TILE_HI)
-      .setOrigin(0.5, 0.5)
-      .setVisible(false)
-      .setAlpha(0.9);
+    this.hover = this.add.image(0, 0, TEX_TILE_HI).setVisible(false).setDepth(MARKER_DEPTH);
     this.marker = this.add
       .image(0, 0, TEX_RING)
-      .setOrigin(0.5, 0.5)
       .setTint(0x2d6cdf)
       .setAlpha(0.85)
-      .setVisible(false);
+      .setVisible(false)
+      .setDepth(MARKER_DEPTH);
     this.tweens.add({
       targets: this.marker,
-      scale: { from: 0.85, to: 1.05 },
+      scale: { from: 0.8, to: 1.0 },
       duration: 600,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.inOut',
     });
+  }
+
+  private frameCamera(): void {
+    const cam = this.cameras.main;
+    const span = GRID_SIZE * TILE;
+    const zoom = Phaser.Math.Clamp(Math.min((cam.width * 0.92) / span, (cam.height * 0.92) / span), 0.6, 2.4);
+    cam.setZoom(zoom);
+    cam.centerOn(span / 2, span / 2);
   }
 
   // ---------------------------------------------------------------- input
@@ -203,7 +171,7 @@ export class OfficeScene extends Phaser.Scene {
       const overNpc = npcId && this.isAdjacentToPlayer(STAKEHOLDER_BY_ID[npcId].grid);
       if (overNpc || (this.isWalkable(gx, gy) && !this.player.moving)) {
         const { x, y } = this.toWorld(gx, gy);
-        this.hover.setPosition(x, y).setDepth(isoDepth(gx, gy, 0)).setVisible(true);
+        this.hover.setPosition(x, y).setVisible(true);
         this.input.setDefaultCursor('pointer');
       } else {
         this.hover.setVisible(false);
@@ -216,23 +184,17 @@ export class OfficeScene extends Phaser.Scene {
       if (state.gamePhase !== 'playing' || state.activeDialogue || this.player.moving) return;
 
       const { gx, gy } = worldToGrid(p.worldX, p.worldY);
-
-      // Clicking an NPC (or its tile) while adjacent opens dialogue.
       const npcId = this.npcAt(gx, gy);
       if (npcId && this.isAdjacentToPlayer(STAKEHOLDER_BY_ID[npcId].grid)) {
         eventBus.emit('requestDialogue', { npcId });
         return;
       }
-
       if (!this.isWalkable(gx, gy)) return;
       const path = findPath({ gx: this.player.gx, gy: this.player.gy }, { gx, gy }, this.isWalkable);
       if (!path) return;
 
       const target = this.toWorld(gx, gy);
-      this.marker
-        .setPosition(target.x, target.y)
-        .setDepth(isoDepth(gx, gy, 0))
-        .setVisible(true);
+      this.marker.setPosition(target.x, target.y).setVisible(true);
       this.hover.setVisible(false);
       sfx.walk();
 
@@ -243,7 +205,6 @@ export class OfficeScene extends Phaser.Scene {
       });
     });
 
-    // Space talks to an adjacent NPC.
     this.input.keyboard?.on('keydown-SPACE', () => {
       const state = store.getState();
       if (state.gamePhase === 'playing' && state.npcInRange && !state.activeDialogue) {
@@ -258,9 +219,7 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private isAdjacentToPlayer(tile: { gx: number; gy: number }): boolean {
-    return (
-      Math.max(Math.abs(tile.gx - this.player.gx), Math.abs(tile.gy - this.player.gy)) <= 1
-    );
+    return Math.max(Math.abs(tile.gx - this.player.gx), Math.abs(tile.gy - this.player.gy)) <= 1;
   }
 
   private updateNpcInRange(): void {
@@ -302,7 +261,7 @@ export class OfficeScene extends Phaser.Scene {
     this.player.setPosition(start.x, start.y);
     this.player.gx = START_TILE.gx;
     this.player.gy = START_TILE.gy;
-    this.player.setDepth(isoDepth(START_TILE.gx, START_TILE.gy, 5));
+    this.player.setDepth(start.y);
     this.marker.setVisible(false);
   }
 
@@ -312,7 +271,6 @@ export class OfficeScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     const state = store.getState();
     if (state.gamePhase === 'playing' && !state.activeDialogue) {
-      // Batch passive clock drift so we don't re-render the UI every frame.
       this.clockAccum += (HOURS_PER_REAL_SECOND * delta) / 1000;
       if (this.clockAccum >= 0.15) {
         advanceClock(this.clockAccum);
@@ -321,7 +279,6 @@ export class OfficeScene extends Phaser.Scene {
     }
   }
 
-  // Expose for debugging if needed.
   currentNodeFor(role: Role) {
     return nodeForStakeholder(store.getState(), role);
   }

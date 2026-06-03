@@ -1,7 +1,7 @@
 # Breach! — GDPR Incident Simulator 🛡️
 
-A browser-based, **Habbo-Hotel-style** cybersecurity incident simulation. You play the
-**Incident Commander** during a personal-data breach: walk an isometric office, consult each
+A browser-based, **top-down pixel-art** cybersecurity incident simulation. You play the
+**Incident Commander** during a personal-data breach: walk a pixel-art office, consult each
 stakeholder (SOC/Tech, CISO, DPO, Management, the Supervisory Authority and an affected
 Customer), and make the calls that decide whether you contain the intrusion, stay compliant
 with the **GDPR 72-hour notification clock (Art. 33 / 34)**, and protect the people whose data
@@ -15,8 +15,8 @@ evidence-led containment and forensics over panic moves.
 ## Tech
 
 - **Vite + TypeScript** build.
-- **Phaser 3** renders the walkable isometric world (click-to-move A\* pathfinding, procedural
-  art — no external image assets).
+- **Phaser 3** renders the walkable top-down world (click-to-move A\* pathfinding, animated
+  pixel-art character sprites + procedurally-generated tiles/furniture).
 - **React** renders the UI overlay (HUD, 72h timer, dialogue/decision panels, debrief).
 - The Phaser world and React UI never import each other — they share a tiny observable
   `store` (`src/core/store.ts`) and a typed `eventBus`.
@@ -66,5 +66,11 @@ src/
 
 To tune difficulty, edit `src/core/config.ts` (timer, scoring weights) or the decision
 `effects` in `src/scenario/scenario.ts`.
+
+## Credits
+
+- Character pixel-art sprites from the **pixel-agents** project by Pablo De Lucca (MIT licensed).
+  See `public/assets/CHARACTERS_LICENSE_pixel-agents.txt`.
+- Tiles, furniture and UI are generated procedurally in this project.
 
 > Educational simulation — a simplified model of GDPR Articles 33 & 34, not legal advice.

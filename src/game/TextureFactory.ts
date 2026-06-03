@@ -1,296 +1,170 @@
 import Phaser from 'phaser';
-import { TILE_W, TILE_H } from '../core/config';
-import { STAKEHOLDERS } from '../scenario/stakeholders';
+import { TILE } from '../core/config';
 
-// Generates every texture the game needs at runtime — no external art assets.
+// Procedural top-down tile + furniture textures (48×48). Characters are real
+// pixel-art sprites loaded from /public/assets (see BootScene).
 
-const FLOOR_A = 0xeef2fb;
-const FLOOR_B = 0xe2e8f6;
-const FLOOR_EDGE = 0xcdd8ee;
-const FLOOR_HI = 0xffffff;
-const WALL_TOP = 0xc6d0e4;
-const WALL_LEFT = 0x9aa7c4;
-const WALL_RIGHT = 0x7e8cae;
-const WALL_WINDOW = 0xbfe3f5;
-
-function diamondPoints(cx = 0, cy = 0, sx = 1, sy = 1): Phaser.Types.Math.Vector2Like[] {
-  return [
-    { x: cx + 0, y: cy + (TILE_H / 2) * sy },
-    { x: cx + (TILE_W / 2) * sx, y: cy + 0 },
-    { x: cx + TILE_W * sx, y: cy + (TILE_H / 2) * sy },
-    { x: cx + (TILE_W / 2) * sx, y: cy + TILE_H * sy },
-  ];
-}
-
-function makeFloor(scene: Phaser.Scene, key: string, fill: number, edge = FLOOR_EDGE): void {
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  g.fillStyle(fill, 1);
-  g.fillPoints(diamondPoints(), true);
-  // Subtle top-left highlight wedge for a soft-lit look.
-  g.fillStyle(FLOOR_HI, 0.25);
-  g.fillPoints(
-    [
-      { x: TILE_W / 2, y: 0 },
-      { x: TILE_W, y: TILE_H / 2 },
-      { x: TILE_W / 2, y: TILE_H / 2 },
-    ],
-    true,
-  );
-  g.lineStyle(1, edge, 0.9);
-  g.strokePoints(diamondPoints(), true);
-  g.generateTexture(key, TILE_W, TILE_H);
-  g.destroy();
-}
-
-/** A plain white diamond used as a tintable rug / highlight. */
-function makeDiamond(scene: Phaser.Scene, key: string, stroke = false): void {
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  g.fillStyle(0xffffff, 1);
-  g.fillPoints(diamondPoints(), true);
-  if (stroke) {
-    g.lineStyle(3, 0xffffff, 1);
-    g.strokePoints(diamondPoints(2, 2, 0.92, 0.92), true);
-  }
-  g.generateTexture(key, TILE_W, TILE_H);
-  g.destroy();
-}
-
-/** Hover highlight: a bright diamond outline. */
-function makeTileHighlight(scene: Phaser.Scene, key: string): void {
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  g.lineStyle(2.5, 0xffffff, 0.95);
-  g.strokePoints(diamondPoints(2, 2, 0.93, 0.93), true);
-  g.generateTexture(key, TILE_W, TILE_H);
-  g.destroy();
-}
-
-/** A 2.5D box (wall / furniture) drawn as a top diamond plus two shaded side faces. */
-function makeBox(
-  scene: Phaser.Scene,
-  key: string,
-  height: number,
-  top: number,
-  left: number,
-  right: number,
-  decorate?: (g: Phaser.GameObjects.Graphics, h: number) => void,
-): void {
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  const h = height;
-
-  g.fillStyle(left, 1);
-  g.fillPoints(
-    [
-      { x: 0, y: TILE_H / 2 },
-      { x: TILE_W / 2, y: TILE_H },
-      { x: TILE_W / 2, y: TILE_H + h },
-      { x: 0, y: TILE_H / 2 + h },
-    ],
-    true,
-  );
-  g.fillStyle(right, 1);
-  g.fillPoints(
-    [
-      { x: TILE_W, y: TILE_H / 2 },
-      { x: TILE_W / 2, y: TILE_H },
-      { x: TILE_W / 2, y: TILE_H + h },
-      { x: TILE_W, y: TILE_H / 2 + h },
-    ],
-    true,
-  );
-  g.fillStyle(top, 1);
-  g.fillPoints(diamondPoints(), true);
-
-  if (decorate) decorate(g, h);
-
-  g.generateTexture(key, TILE_W, TILE_H + h);
-  g.destroy();
-}
-
-/** A taller, Habbo-style avatar: dark outline, big head, shaded torso, legs + shoes, face. */
-function makeCharacter(scene: Phaser.Scene, key: string, body: number, accent: number): void {
-  const w = 58;
-  const h = 96;
-  const cx = w / 2;
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  const dark = Phaser.Display.Color.IntegerToColor(body).darken(26).color;
-  const light = Phaser.Display.Color.IntegerToColor(body).lighten(18).color;
-  const skin = 0xfcd9b0;
-  const skinDk = 0xe9b98a;
-  const hairDark = Phaser.Display.Color.IntegerToColor(accent).darken(14).color;
-  const OUT = 0x232a3d; // outline colour
-
-  // Drop shadow.
-  g.fillStyle(0x16203a, 0.22);
-  g.fillEllipse(cx, h - 4, 40, 13);
-
-  // Trousers + legs.
-  g.lineStyle(2, OUT, 0.5);
-  g.fillStyle(0x3a4157, 1);
-  g.fillRoundedRect(cx - 12, 58, 11, 20, 4);
-  g.fillRoundedRect(cx + 1, 58, 11, 20, 4);
-  g.strokeRoundedRect(cx - 12, 58, 11, 20, 4);
-  g.strokeRoundedRect(cx + 1, 58, 11, 20, 4);
-  // Shoes.
-  g.fillStyle(0x23283a, 1);
-  g.fillRoundedRect(cx - 14, 75, 13, 8, 3);
-  g.fillRoundedRect(cx + 1, 75, 13, 8, 3);
-
-  // Arms.
-  g.fillStyle(dark, 1);
-  g.lineStyle(2, OUT, 0.45);
-  g.fillRoundedRect(cx - 21, 33, 9, 26, 4);
-  g.fillRoundedRect(cx + 12, 33, 9, 26, 4);
-  g.strokeRoundedRect(cx - 21, 33, 9, 26, 4);
-  g.strokeRoundedRect(cx + 12, 33, 9, 26, 4);
-  g.fillStyle(skin, 1); // hands
-  g.fillCircle(cx - 16, 58, 4);
-  g.fillCircle(cx + 16, 58, 4);
-
-  // Torso with shading.
-  g.fillStyle(body, 1);
-  g.fillRoundedRect(cx - 17, 30, 34, 34, 13);
-  g.fillStyle(light, 0.55);
-  g.fillRoundedRect(cx - 17, 30, 34, 14, 13);
-  g.fillStyle(dark, 0.5);
-  g.fillRoundedRect(cx - 17, 54, 34, 10, 9);
-  // Collar.
-  g.fillStyle(accent, 1);
-  g.fillTriangle(cx - 7, 31, cx + 7, 31, cx, 44);
-  g.fillStyle(skin, 1);
-  g.fillTriangle(cx - 3, 31, cx + 3, 31, cx, 37);
-  // Torso outline.
-  g.lineStyle(2, OUT, 0.5);
-  g.strokeRoundedRect(cx - 17, 30, 34, 34, 13);
-
-  // Head.
-  g.fillStyle(skin, 1);
-  g.fillCircle(cx, 18, 14);
-  g.fillStyle(skinDk, 0.5);
-  g.fillEllipse(cx + 5, 22, 14, 16);
-  g.lineStyle(2, OUT, 0.5);
-  g.strokeCircle(cx, 18, 14);
-  // Ears.
-  g.fillStyle(skin, 1);
-  g.fillCircle(cx - 13, 19, 2.6);
-  g.fillCircle(cx + 13, 19, 2.6);
-  // Hair.
-  g.fillStyle(accent, 1);
-  g.fillRoundedRect(cx - 14, 3, 28, 12, 7);
-  g.fillStyle(hairDark, 1);
-  g.fillRect(cx - 14, 12, 28, 2);
-  g.fillCircle(cx - 10, 6, 4.5);
-  g.fillCircle(cx, 4, 5.5);
-  g.fillCircle(cx + 10, 6, 4.5);
-  // Eyes + brows.
-  g.fillStyle(0x2a2f44, 1);
-  g.fillCircle(cx - 5, 19, 2);
-  g.fillCircle(cx + 5, 19, 2);
-  // Smile.
-  g.lineStyle(1.6, 0xb07a4e, 1);
-  g.beginPath();
-  g.arc(cx, 21, 4.5, 0.18 * Math.PI, 0.82 * Math.PI, false);
-  g.strokePath();
-
-  g.generateTexture(key, w, h);
-  g.destroy();
-}
-
-/** Soft contact shadow blob for furniture. */
-function makeShadow(scene: Phaser.Scene, key: string): void {
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  g.fillStyle(0x16203a, 0.16);
-  g.fillEllipse(TILE_W / 2, TILE_H / 2, TILE_W * 0.7, TILE_H * 0.62);
-  g.generateTexture(key, TILE_W, TILE_H);
-  g.destroy();
-}
-
-export const CHAR_PLAYER = 'char_player';
 export const TEX_RUG = 'rug';
 export const TEX_RING = 'ring';
 export const TEX_TILE_HI = 'tile_hi';
 export const TEX_SHADOW = 'shadow';
 
+const T = TILE;
+
+function gfx(scene: Phaser.Scene): Phaser.GameObjects.Graphics {
+  return scene.make.graphics({ x: 0, y: 0 }, false);
+}
+
+function floor(scene: Phaser.Scene, key: string, fill: number, border: number): void {
+  const g = gfx(scene);
+  g.fillStyle(fill, 1);
+  g.fillRect(0, 0, T, T);
+  g.lineStyle(1, border, 0.7);
+  g.strokeRect(0.5, 0.5, T - 1, T - 1);
+  g.fillStyle(0xffffff, 0.05);
+  g.fillRect(0, 0, T, 2);
+  g.generateTexture(key, T, T);
+  g.destroy();
+}
+
+function wallTile(scene: Phaser.Scene): void {
+  const g = gfx(scene);
+  g.fillStyle(0x6c7488, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x8a92a6, 1); // top highlight
+  g.fillRect(0, 0, T, 7);
+  g.fillStyle(0x565d70, 1); // baseboard
+  g.fillRect(0, T - 9, T, 9);
+  g.lineStyle(1, 0x474d5e, 0.6);
+  g.strokeRect(0.5, 0.5, T - 1, T - 1);
+  g.generateTexture('wall', T, T);
+  g.destroy();
+}
+
 export function generateTextures(scene: Phaser.Scene): void {
-  makeFloor(scene, 'floor_a', FLOOR_A);
-  makeFloor(scene, 'floor_b', FLOOR_B);
-  makeFloor(scene, 'floor_accent', 0xcfeae0);
-  makeDiamond(scene, TEX_RUG);
-  makeDiamond(scene, TEX_RING, true);
-  makeTileHighlight(scene, TEX_TILE_HI);
-  makeShadow(scene, TEX_SHADOW);
+  // Floors.
+  floor(scene, 'floor_a', 0xe9e3d5, 0xd3cbb8);
+  floor(scene, 'floor_b', 0xe1dac9, 0xd3cbb8);
 
-  // Habbo-style wall: tall, with a bright top trim and a darker skirting band.
-  makeBox(scene, 'wall', 54, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g, h) => {
-    const band = (x1: number, y1: number, x2: number, y2: number, off: number, depth: number) => [
-      { x: x1, y: y1 + off },
-      { x: x2, y: y2 + off },
-      { x: x2, y: y2 + off + depth },
-      { x: x1, y: y1 + off + depth },
-    ];
-    // Top trim highlight on both visible faces.
-    g.fillStyle(0xffffff, 0.22);
-    g.fillPoints(band(0, TILE_H / 2, TILE_W / 2, TILE_H, 0, 6), true);
-    g.fillPoints(band(TILE_W, TILE_H / 2, TILE_W / 2, TILE_H, 0, 6), true);
-    // Dark skirting near the floor.
-    g.fillStyle(0x000000, 0.16);
-    g.fillPoints(band(0, TILE_H / 2, TILE_W / 2, TILE_H, h - 8, 8), true);
-    g.fillPoints(band(TILE_W, TILE_H / 2, TILE_W / 2, TILE_H, h - 8, 8), true);
-    // Subtle window on the right face.
-    g.fillStyle(WALL_WINDOW, 0.7);
-    g.fillPoints(
-      [
-        { x: TILE_W - 6, y: TILE_H / 2 + 14 },
-        { x: TILE_W / 2 + 8, y: TILE_H + 6 },
-        { x: TILE_W / 2 + 8, y: TILE_H + 24 },
-        { x: TILE_W - 6, y: TILE_H / 2 + 32 },
-      ],
-      true,
-    );
-  });
-  // Desk with a monitor.
-  makeBox(scene, 'desk', 16, 0x9a7a5b, 0x7a5f47, 0x624c39, (g) => {
-    g.fillStyle(0x2b3242, 1);
-    g.fillRoundedRect(TILE_W / 2 - 7, 2, 14, 9, 2);
+  // Wall.
+  wallTile(scene);
+
+  // Rug (tintable square).
+  {
+    const g = gfx(scene);
+    g.fillStyle(0xffffff, 1);
+    g.fillRoundedRect(2, 2, T - 4, T - 4, 6);
+    g.generateTexture(TEX_RUG, T, T);
+    g.destroy();
+  }
+  // Ring (tintable).
+  {
+    const g = gfx(scene);
+    g.lineStyle(3, 0xffffff, 1);
+    g.strokeCircle(T / 2, T / 2, T / 2 - 4);
+    g.generateTexture(TEX_RING, T, T);
+    g.destroy();
+  }
+  // Tile highlight (hover).
+  {
+    const g = gfx(scene);
+    g.lineStyle(2.5, 0xffffff, 0.95);
+    g.strokeRoundedRect(2, 2, T - 4, T - 4, 5);
+    g.generateTexture(TEX_TILE_HI, T, T);
+    g.destroy();
+  }
+  // Soft shadow.
+  {
+    const g = gfx(scene);
+    g.fillStyle(0x10182c, 0.22);
+    g.fillEllipse(T / 2, T / 2, T * 0.66, T * 0.4);
+    g.generateTexture(TEX_SHADOW, T, T);
+    g.destroy();
+  }
+
+  // ---- Furniture (top-down footprints) ----
+  // Desk with monitor.
+  {
+    const g = gfx(scene);
+    g.fillStyle(0x8a6b4f, 1);
+    g.fillRoundedRect(4, 10, T - 8, T - 16, 5);
+    g.fillStyle(0x9c7c5c, 1);
+    g.fillRoundedRect(6, 12, T - 12, T - 22, 4);
+    g.fillStyle(0x2b3242, 1); // monitor
+    g.fillRoundedRect(T / 2 - 9, 4, 18, 12, 2);
     g.fillStyle(0x5fd0c4, 1);
-    g.fillRect(TILE_W / 2 - 5, 4, 10, 5);
-  });
-  // Server rack with blinking lights.
-  makeBox(scene, 'server', 30, 0x3c4a60, 0x2c3748, 0x202836, (g) => {
+    g.fillRect(T / 2 - 7, 6, 14, 8);
+    g.fillStyle(0x1f2530, 1); // keyboard
+    g.fillRoundedRect(T / 2 - 9, T - 18, 18, 6, 1);
+    g.generateTexture('desk', T, T);
+    g.destroy();
+  }
+  // Server rack.
+  {
+    const g = gfx(scene);
+    g.fillStyle(0x333b4a, 1);
+    g.fillRoundedRect(8, 4, T - 16, T - 8, 4);
+    g.fillStyle(0x232a36, 1);
+    for (let i = 0; i < 4; i++) g.fillRect(12, 9 + i * 9, T - 24, 5);
     g.fillStyle(0x59f08a, 1);
-    g.fillCircle(TILE_W / 2 - 6, 8, 1.6);
+    g.fillCircle(15, 11, 1.6);
     g.fillStyle(0xffd45e, 1);
-    g.fillCircle(TILE_W / 2, 8, 1.6);
+    g.fillCircle(15, 20, 1.6);
     g.fillStyle(0x59f08a, 1);
-    g.fillCircle(TILE_W / 2 + 6, 8, 1.6);
-  });
+    g.fillCircle(15, 29, 1.6);
+    g.generateTexture('server', T, T);
+    g.destroy();
+  }
   // Plant.
-  makeBox(scene, 'plant', 14, 0x8d6e52, 0x6f553f, 0x5a4532, (g) => {
+  {
+    const g = gfx(scene);
+    g.fillStyle(0x8d6e52, 1);
+    g.fillRoundedRect(T / 2 - 8, T / 2 + 2, 16, 14, 3);
     g.fillStyle(0x4caf78, 1);
-    g.fillCircle(TILE_W / 2, -2, 11);
+    g.fillCircle(T / 2, T / 2 - 2, 14);
     g.fillStyle(0x3a8a5f, 1);
-    g.fillCircle(TILE_W / 2 - 5, 1, 7);
-    g.fillCircle(TILE_W / 2 + 5, 0, 6);
+    g.fillCircle(T / 2 - 7, T / 2 + 2, 8);
+    g.fillCircle(T / 2 + 7, T / 2, 7);
     g.fillStyle(0x6fd49b, 1);
-    g.fillCircle(TILE_W / 2 - 2, -5, 5);
-  });
-  // Filing cabinet with drawer handles.
-  makeBox(scene, 'cabinet', 30, 0xb9c2d4, 0x95a0b8, 0x7c889f, (g, h) => {
+    g.fillCircle(T / 2 - 2, T / 2 - 7, 6);
+    g.generateTexture('plant', T, T);
+    g.destroy();
+  }
+  // Filing cabinet.
+  {
+    const g = gfx(scene);
+    g.fillStyle(0xb9c2d4, 1);
+    g.fillRoundedRect(8, 6, T - 16, T - 12, 3);
+    g.fillStyle(0x95a0b8, 1);
+    for (let i = 0; i < 3; i++) g.fillRect(11, 10 + i * 11, T - 22, 8);
     g.fillStyle(0x6b768a, 1);
-    for (let i = 0; i < 3; i++) {
-      const yy = TILE_H / 2 + 8 + i * (h / 3 - 2);
-      g.fillRoundedRect(8, yy, 12, 3, 1.5);
-    }
-  });
+    for (let i = 0; i < 3; i++) g.fillRect(T / 2 - 4, 13 + i * 11, 8, 2);
+    g.generateTexture('cabinet', T, T);
+    g.destroy();
+  }
   // Water cooler.
-  makeBox(scene, 'cooler', 26, 0xdfe7f0, 0xc3cdda, 0xaab6c6, (g) => {
+  {
+    const g = gfx(scene);
+    g.fillStyle(0xdfe7f0, 1);
+    g.fillRoundedRect(12, 10, T - 24, T - 16, 4);
     g.fillStyle(0x6cc6e8, 0.9);
-    g.fillCircle(TILE_W / 2, 0, 8);
+    g.fillCircle(T / 2, 12, 8);
     g.fillStyle(0x9ad9f0, 0.9);
-    g.fillCircle(TILE_W / 2 - 3, -2, 4);
-  });
-
-  makeCharacter(scene, CHAR_PLAYER, 0x2d6cdf, 0x163a82);
-  for (const s of STAKEHOLDERS) {
-    makeCharacter(scene, `char_${s.id}`, s.colors.body, s.colors.accent);
+    g.fillCircle(T / 2 - 3, 10, 4);
+    g.generateTexture('cooler', T, T);
+    g.destroy();
+  }
+  // Sofa.
+  {
+    const g = gfx(scene);
+    g.fillStyle(0x55719f, 1);
+    g.fillRoundedRect(4, 6, T - 8, T - 12, 6);
+    g.fillStyle(0x6b8cce, 1);
+    g.fillRoundedRect(7, 12, T - 14, T - 20, 5);
+    g.fillStyle(0x7d9cd8, 1);
+    g.fillRoundedRect(9, 14, (T - 18) / 2 - 1, T - 24, 3);
+    g.fillRoundedRect(T / 2 + 1, 14, (T - 18) / 2 - 1, T - 24, 3);
+    g.generateTexture('sofa', T, T);
+    g.destroy();
   }
 }

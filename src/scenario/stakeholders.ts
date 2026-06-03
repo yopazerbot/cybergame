@@ -9,6 +9,8 @@ export interface Stakeholder {
   title: string;
   emoji: string;
   colors: { body: number; accent: number };
+  /** Pixel-art character spritesheet key (char_0..char_5). */
+  sheet: string;
   /** Station tile the NPC stands on (blocked for pathfinding). */
   grid: { gx: number; gy: number };
   blurb: string;
@@ -21,6 +23,7 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'IT / SOC Analyst',
     emoji: '🧑‍💻',
     colors: { body: 0x3aa6b9, accent: 0x123c43 },
+    sheet: 'char_0',
     grid: { gx: 2, gy: 2 },
     blurb: 'Runs the SOC. Lives in the SIEM, EDR console and packet captures.',
   },
@@ -30,6 +33,7 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'CISO',
     emoji: '🛡️',
     colors: { body: 0x6c5ce7, accent: 0x2d2466 },
+    sheet: 'char_1',
     grid: { gx: 2, gy: 9 },
     blurb: 'Owns the incident response plan and the risk call.',
   },
@@ -39,6 +43,7 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'Data Protection Officer',
     emoji: '⚖️',
     colors: { body: 0x00b894, accent: 0x0a5e4a },
+    sheet: 'char_2',
     grid: { gx: 9, gy: 2 },
     blurb: 'Decides if this is a notifiable personal-data breach under the GDPR.',
   },
@@ -48,6 +53,7 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'CEO / Management',
     emoji: '👔',
     colors: { body: 0xe17055, accent: 0x6e2f22 },
+    sheet: 'char_3',
     grid: { gx: 9, gy: 9 },
     blurb: 'Signs off on disclosure, budget and external messaging.',
   },
@@ -57,7 +63,8 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'Supervisory Authority',
     emoji: '🏛️',
     colors: { body: 0x636e72, accent: 0x2d3436 },
-    grid: { gx: 5, gy: 11 },
+    sheet: 'char_4',
+    grid: { gx: 5, gy: 10 },
     blurb: 'The data protection authority. Expects an Art. 33 notification within 72h.',
   },
   {
@@ -66,7 +73,8 @@ export const STAKEHOLDERS: Stakeholder[] = [
     title: 'Affected Customer',
     emoji: '🙍',
     colors: { body: 0xfdcb6e, accent: 0x8a6d1f },
-    grid: { gx: 11, gy: 5 },
+    sheet: 'char_5',
+    grid: { gx: 10, gy: 5 },
     blurb: 'One of the data subjects whose records were in the exposed table.',
   },
 ];

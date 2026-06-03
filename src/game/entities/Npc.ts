@@ -1,11 +1,10 @@
 import Phaser from 'phaser';
-import { isoDepth } from '../iso';
 import { TEX_RING } from '../TextureFactory';
 import type { Stakeholder } from '../../scenario/stakeholders';
 
 type ToWorld = (gx: number, gy: number) => { x: number; y: number };
 
-// A stakeholder NPC: procedural body + always-on nameplate + a pulsing floor "objective" ring.
+// Top-down stakeholder NPC: animated sprite + nameplate (name + role) + objective ring.
 export class Npc extends Phaser.GameObjects.Container {
   readonly info: Stakeholder;
   private ring: Phaser.GameObjects.Image;
@@ -17,18 +16,16 @@ export class Npc extends Phaser.GameObjects.Container {
     super(scene, x, y);
     this.info = stakeholder;
 
-    // Floor objective ring (hidden until the NPC has a pending action).
     this.ring = scene.add
-      .image(0, 6, TEX_RING)
-      .setOrigin(0.5, 0.5)
+      .image(0, 10, TEX_RING)
       .setTint(stakeholder.colors.body)
-      .setAlpha(0.0);
+      .setAlpha(0);
 
-    const body = scene.add.image(0, 0, `char_${stakeholder.id}`).setOrigin(0.5, 0.92);
+    const sprite = scene.add.sprite(0, 0, stakeholder.sheet, 1).setOrigin(0.5, 0.9).setScale(2);
+    sprite.play(`${stakeholder.sheet}-idle-down`);
 
-    // Bobbing down-chevron to draw the eye when there's something to do.
     this.arrow = scene.add
-      .text(0, -120, '▼', {
+      .text(0, -92, '▼', {
         fontFamily: 'Baloo 2, sans-serif',
         fontSize: '18px',
         color: '#ffd24a',
@@ -38,22 +35,13 @@ export class Npc extends Phaser.GameObjects.Container {
 
     this.plate = this.makeNameplate(scene);
 
-    this.add([this.ring, body, this.plate, this.arrow]);
+    this.add([this.ring, sprite, this.plate, this.arrow]);
     scene.add.existing(this);
-    this.setDepth(isoDepth(stakeholder.grid.gx, stakeholder.grid.gy, 4));
+    this.setDepth(this.y);
 
     scene.tweens.add({
-      targets: body,
-      y: -3,
-      duration: 1500,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.inOut',
-      delay: Math.random() * 800,
-    });
-    scene.tweens.add({
       targets: this.ring,
-      scale: { from: 0.9, to: 1.12 },
+      scale: { from: 0.85, to: 1.12 },
       duration: 850,
       yoyo: true,
       repeat: -1,
@@ -61,7 +49,7 @@ export class Npc extends Phaser.GameObjects.Container {
     });
     scene.tweens.add({
       targets: this.arrow,
-      y: -114,
+      y: -86,
       duration: 600,
       yoyo: true,
       repeat: -1,
@@ -88,24 +76,22 @@ export class Npc extends Phaser.GameObjects.Container {
       .setOrigin(0.5);
 
     const w = Math.max(name.width, role.width) + 18;
-    const hgt = 30;
+    const h = 30;
     const bg = scene.add.graphics();
-    bg.fillStyle(0xffffff, 0.95);
-    bg.fillRoundedRect(-w / 2, -hgt / 2, w, hgt, 8);
+    bg.fillStyle(0xffffff, 0.96);
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
     bg.lineStyle(1.5, this.info.colors.body, 1);
-    bg.strokeRoundedRect(-w / 2, -hgt / 2, w, hgt, 8);
-    // Coloured accent bar under the name to separate role.
-    bg.fillStyle(this.info.colors.body, 0.18);
-    bg.fillRoundedRect(-w / 2 + 3, 1, w - 6, hgt / 2 - 3, 5);
-    // Little pointer triangle.
-    bg.fillStyle(0xffffff, 0.95);
-    bg.fillTriangle(-5, hgt / 2 - 1, 5, hgt / 2 - 1, 0, hgt / 2 + 5);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
+    bg.fillStyle(this.info.colors.body, 0.16);
+    bg.fillRoundedRect(-w / 2 + 3, 1, w - 6, h / 2 - 3, 5);
+    bg.fillStyle(0xffffff, 0.96);
+    bg.fillTriangle(-5, h / 2 - 1, 5, h / 2 - 1, 0, h / 2 + 5);
 
-    return scene.add.container(0, -102, [bg, name, role]);
+    return scene.add.container(0, -72, [bg, name, role]);
   }
 
   setPending(pending: boolean): void {
-    this.ring.setAlpha(pending ? 0.55 : 0.0);
+    this.ring.setAlpha(pending ? 0.6 : 0);
     this.arrow.setVisible(pending);
     this.plate.setScale(pending ? 1.05 : 1.0);
   }
