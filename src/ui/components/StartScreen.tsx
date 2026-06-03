@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { store } from '../../core/store';
 import { DIFFICULTY } from '../../core/config';
-import { getDifficulty, setDifficulty } from '../../core/profile';
+import {
+  getDifficulty,
+  setDifficulty,
+  getRecommendations,
+  setRecommendations,
+} from '../../core/profile';
 import type { Difficulty } from '../../core/types';
 import { SCENARIO_INTRO } from '../../scenario/scenario';
 import { STAKEHOLDERS } from '../../scenario/stakeholders';
@@ -12,12 +17,17 @@ const DIFFS: Difficulty[] = ['easy', 'normal', 'hard'];
 
 export function StartScreen() {
   const [diff, setDiff] = useState<Difficulty>(getDifficulty());
+  const [rec, setRec] = useState<boolean>(getRecommendations());
 
   const pick = (d: Difficulty) => {
     setDiff(d);
     setDifficulty(d);
   };
-  const start = () => store.startGame(diff);
+  const pickRec = (on: boolean) => {
+    setRec(on);
+    setRecommendations(on);
+  };
+  const start = () => store.startGame(diff, rec);
 
   return (
     <div className="overlay center scroll">
@@ -83,13 +93,41 @@ export function StartScreen() {
           </div>
         </div>
 
+        <div className="difficulty">
+          <span className="difficulty-label">Recommendations</span>
+          <div className="seg">
+            <button className={`seg-btn ${rec ? 'active' : ''}`} onClick={() => pickRec(true)}>
+              On
+              <em>guided</em>
+            </button>
+            <button className={`seg-btn ${!rec ? 'active' : ''}`} onClick={() => pickRec(false)}>
+              Off
+              <em>solo</em>
+            </button>
+          </div>
+        </div>
+        <p className="rec-hint">
+          {rec
+            ? 'Dialogs highlight the GDPR-recommended choice. Your score goes on the guided board.'
+            : 'No hints in dialogs — you decide unaided. Your score goes on the solo board.'}
+        </p>
+
         <button className="btn primary big" onClick={start}>
           ▶ Start the incident
         </button>
 
         <div className="leaderboard-block">
-          <h3>🏆 Global leaderboard</h3>
-          <Scoreboard limit={8} />
+          <h3>🏆 Global leaderboards</h3>
+          <div className="board-split">
+            <div className="board-col">
+              <h4>🎯 Solo · no hints</h4>
+              <Scoreboard mode="without" limit={8} />
+            </div>
+            <div className="board-col">
+              <h4>🤝 Guided · recommendations</h4>
+              <Scoreboard mode="with" limit={8} />
+            </div>
+          </div>
         </div>
 
         <Credit className="on-card" />

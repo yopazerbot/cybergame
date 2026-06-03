@@ -48,6 +48,8 @@ export interface Ending {
 export interface GameState {
   gamePhase: GamePhase;
   difficulty: Difficulty;
+  /** When true, the GDPR-recommended choice is highlighted in dialogs (chosen at start). */
+  recommendations: boolean;
   phase: Phase;
   clock: Clock;
   meters: Meters;

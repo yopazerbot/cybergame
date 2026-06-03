@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchScores, type ScoreEntry } from '../../core/api';
+import { fetchScores, type ScoreEntry, type ScoreMode } from '../../core/api';
 
 const ENDING_ICON: Record<string, string> = {
   exemplary: '🏆',
@@ -17,10 +17,12 @@ export function Scoreboard({
   scores: provided,
   highlightTs,
   limit = 10,
+  mode,
 }: {
   scores?: ScoreEntry[];
   highlightTs?: number;
   limit?: number;
+  mode?: ScoreMode;
 }) {
   const [list, setList] = useState<ScoreEntry[] | null>(provided ?? null);
 
@@ -30,11 +32,11 @@ export function Scoreboard({
       return;
     }
     let alive = true;
-    fetchScores().then((s) => alive && setList(s));
+    fetchScores(mode).then((s) => alive && setList(s));
     return () => {
       alive = false;
     };
-  }, [provided]);
+  }, [provided, mode]);
 
   if (list === null) return <div className="scoreboard-state">Loading leaderboard…</div>;
   if (list.length === 0)

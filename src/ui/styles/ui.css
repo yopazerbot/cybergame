@@ -1484,3 +1484,47 @@ kbd {
 .net-global .btn {
   flex: 1;
 }
+
+/* --------------------------------------------------- recommendations feature */
+.rec-hint {
+  margin: 6px 0 2px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+/* Highlighted "recommended" choice in dialogs. */
+.btn.choice.recommended {
+  border-color: var(--good);
+  box-shadow: 0 0 0 1px var(--good) inset, 0 6px 18px rgba(33, 163, 102, 0.15);
+}
+.choice-rec {
+  display: inline-block;
+  align-self: flex-start;
+  margin-bottom: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--good);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* Two side-by-side leaderboards (solo vs guided). */
+.board-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.board-col h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 800;
+}
+@media (max-width: 560px) {
+  .board-split {
+    grid-template-columns: 1fr;
+  }
+}

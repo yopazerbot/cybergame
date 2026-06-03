@@ -35,6 +35,7 @@ export function DebriefScreen() {
       hoursLeft,
       compliance: Math.round(state.meters.compliance),
       reputation: Math.round(state.meters.reputation),
+      recommended: state.recommendations,
     }).then((res) => {
       if (!res) return;
       setBoard(res.scores);
@@ -123,16 +124,32 @@ export function DebriefScreen() {
 
         <div className="leaderboard-block">
           <h3>
-            🏆 Global leaderboard
+            🏆 Global leaderboards
             {rank !== null && (
-              <span className="your-rank"> — you placed #{rank}</span>
+              <span className="your-rank">
+                {' '}
+                — you placed #{rank} on the {state.recommendations ? 'guided' : 'solo'} board
+              </span>
             )}
           </h3>
-          {board === null ? (
-            <Scoreboard limit={10} highlightTs={myTs} />
-          ) : (
-            <Scoreboard scores={board} limit={10} highlightTs={myTs} />
-          )}
+          <div className="board-split">
+            <div className="board-col">
+              <h4>🎯 Solo · no hints</h4>
+              {!state.recommendations && board !== null ? (
+                <Scoreboard scores={board} limit={10} highlightTs={myTs} />
+              ) : (
+                <Scoreboard mode="without" limit={10} />
+              )}
+            </div>
+            <div className="board-col">
+              <h4>🤝 Guided · recommendations</h4>
+              {state.recommendations && board !== null ? (
+                <Scoreboard scores={board} limit={10} highlightTs={myTs} />
+              ) : (
+                <Scoreboard mode="with" limit={10} />
+              )}
+            </div>
+          </div>
         </div>
 
         <p className="disclaimer">

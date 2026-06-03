@@ -48,6 +48,29 @@ export interface DecisionNode {
   oneShot?: boolean;
 }
 
+/**
+ * The GDPR-recommended choice for a node: the one that best advances correct,
+ * compliant incident response. Derived from effects (compliance-dominant, matching
+ * the scoring weights) so it always tracks the data — no separate flag to maintain.
+ */
+export function recommendedChoiceId(node: DecisionNode): string {
+  let best = node.choices[0];
+  let bestQ = -Infinity;
+  for (const c of node.choices) {
+    const e = c.effects;
+    const q =
+      (e.compliance ?? 0) * 2 +
+      (e.reputation ?? 0) -
+      (e.cost ?? 0) * 0.5 -
+      (e.timeCostHours ?? 0) * 0.25;
+    if (q > bestQ) {
+      bestQ = q;
+      best = c;
+    }
+  }
+  return best.id;
+}
+
 export const PHASE_ORDER: Phase[] = [
   'detection',
   'containment',

@@ -5,6 +5,24 @@ import type { Difficulty } from './types';
 const NAME_KEY = 'breach.name';
 const DIFF_KEY = 'breach.difficulty';
 const ACH_KEY = 'breach.achievements';
+const REC_KEY = 'breach.recommendations';
+
+/** Whether dialogs highlight the GDPR-recommended choice. Defaults on. */
+export function getRecommendations(): boolean {
+  try {
+    return localStorage.getItem(REC_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+export function setRecommendations(on: boolean): void {
+  try {
+    localStorage.setItem(REC_KEY, on ? '1' : '0');
+  } catch {
+    /* ignore */
+  }
+}
 
 export function getUsername(): string {
   try {

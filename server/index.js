@@ -53,8 +53,18 @@ const byScore = (a, b) => b.score - a.score || a.ts - b.ts;
 const app = express();
 app.use(express.json({ limit: '16kb' }));
 
-app.get('/api/scores', (_req, res) => {
-  res.json({ scores: readScores().sort(byScore).slice(0, TOP_N) });
+// Optional ?mode=with|without filters to one recommendations bucket. Legacy
+// entries without the field count as "without" (they were unassisted).
+const inBucket = (s, mode) =>
+  mode === 'with' ? Boolean(s.recommended) : mode === 'without' ? !s.recommended : true;
+
+app.get('/api/scores', (req, res) => {
+  const mode = req.query.mode;
+  const scores = readScores()
+    .filter((s) => inBucket(s, mode))
+    .sort(byScore)
+    .slice(0, TOP_N);
+  res.json({ scores });
 });
 
 app.post('/api/scores', async (req, res) => {
@@ -67,6 +77,7 @@ app.post('/api/scores', async (req, res) => {
     hoursLeft: clampNum(b.hoursLeft, 0, 10000, 0),
     compliance: clampNum(b.compliance, 0, 100, 0),
     reputation: clampNum(b.reputation, 0, 100, 0),
+    recommended: Boolean(b.recommended),
     ts: Date.now(),
   };
 
@@ -76,8 +87,11 @@ app.post('/api/scores', async (req, res) => {
   const trimmed = scores.slice(0, MAX_STORED);
   await writeScores(trimmed);
 
-  const rank = trimmed.findIndex((s) => s.ts === entry.ts && s.name === entry.name) + 1;
-  res.json({ ok: true, rank: rank || null, total: trimmed.length, entry, scores: trimmed.slice(0, TOP_N) });
+  // Rank the player within their own bucket and return that board, so the
+  // debrief compares like-for-like (assisted vs unassisted runs don't mix).
+  const bucket = trimmed.filter((s) => Boolean(s.recommended) === entry.recommended);
+  const rank = bucket.findIndex((s) => s.ts === entry.ts && s.name === entry.name) + 1;
+  res.json({ ok: true, rank: rank || null, total: bucket.length, entry, scores: bucket.slice(0, TOP_N) });
 });
 
 // Static SPA + history fallback.

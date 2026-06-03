@@ -3,12 +3,14 @@ import type { Role } from '../../core/types';
 import { STAKEHOLDER_BY_ID } from '../../scenario/stakeholders';
 import { store } from '../../core/store';
 import { nodeForStakeholder, resolveChoice } from '../../scenario/scoring';
-import type { Choice } from '../../scenario/scenario';
+import { recommendedChoiceId, type Choice } from '../../scenario/scenario';
 
 export function DialoguePanel({ npcId }: { npcId: Role }) {
   const s = STAKEHOLDER_BY_ID[npcId];
   const node = nodeForStakeholder(store.getState(), npcId);
   const [picked, setPicked] = useState<Choice | null>(null);
+  const showRecs = store.getState().recommendations;
+  const recId = node && showRecs ? recommendedChoiceId(node) : null;
 
   const close = () => store.setState({ ...store.getState(), activeDialogue: null });
 
@@ -41,7 +43,12 @@ export function DialoguePanel({ npcId }: { npcId: Role }) {
               <p className="dialogue-text">{node.prompt}</p>
               <div className="choices">
                 {node.choices.map((c) => (
-                  <button key={c.id} className="btn choice" onClick={() => setPicked(c)}>
+                  <button
+                    key={c.id}
+                    className={`btn choice ${c.id === recId ? 'recommended' : ''}`}
+                    onClick={() => setPicked(c)}
+                  >
+                    {c.id === recId && <span className="choice-rec">✓ Recommended</span>}
                     <span className="choice-label">{c.label}</span>
                     {c.tag && <span className={`choice-tag tag-${tagClass(c.tag)}`}>{c.tag}</span>}
                   </button>

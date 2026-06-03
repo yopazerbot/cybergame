@@ -3,6 +3,8 @@ import type { Difficulty } from './types';
 // Thin client for the cross-session scoreboard API. All calls fail soft so the
 // game still works fully offline / without the backend.
 
+export type ScoreMode = 'with' | 'without';
+
 export interface ScoreEntry {
   name: string;
   score: number;
@@ -11,12 +13,14 @@ export interface ScoreEntry {
   hoursLeft: number;
   compliance: number;
   reputation: number;
+  /** Whether this run had in-dialog recommendations enabled. */
+  recommended: boolean;
   ts: number;
 }
 
-export async function fetchScores(): Promise<ScoreEntry[]> {
+export async function fetchScores(mode?: ScoreMode): Promise<ScoreEntry[]> {
   try {
-    const res = await fetch('/api/scores');
+    const res = await fetch(`/api/scores${mode ? `?mode=${mode}` : ''}`);
     if (!res.ok) return [];
     const json = await res.json();
     return Array.isArray(json.scores) ? json.scores : [];
