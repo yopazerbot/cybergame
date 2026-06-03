@@ -120,10 +120,12 @@ export function StartScreen() {
           )}
         </div>
 
-        <h3 className="section-title">
-          {mode === 'attacker' ? '🦹 Your crew & targets' : '👥 Your incident team'}
-        </h3>
-        <div className="roles">
+        <div className="start-grid">
+          <div className="start-col">
+            <h3 className="section-title">
+              {mode === 'attacker' ? '🦹 Your crew & targets' : '👥 Your incident team'}
+            </h3>
+            <div className="roles">
           {campaignStakeholders(mode).map((s) => (
             <div className="role-chip" key={s.id} title={s.blurb}>
               <span className="role-emoji">{s.emoji}</span>
@@ -162,7 +164,9 @@ export function StartScreen() {
             </span>
           </div>
         </div>
+          </div>
 
+          <div className="start-col">
         <h3 className="section-title">⚙️ Set up your run</h3>
         <div className="setup-panel">
           <div className="setup-grid">
@@ -218,11 +222,13 @@ export function StartScreen() {
           <div className="board-split">
             <div className="board-col">
               <h4>🎯 Solo · no hints</h4>
-              <Scoreboard mode="without" limit={8} />
+              <Scoreboard mode="without" limit={6} />
             </div>
             <div className="board-col">
               <h4>🤝 Guided · recommendations</h4>
-              <Scoreboard mode="with" limit={8} />
+              <Scoreboard mode="with" limit={6} />
+            </div>
+          </div>
             </div>
           </div>
         </div>

@@ -50,9 +50,10 @@ export function DialoguePanel({ npcId }: { npcId: Role }) {
                     className={`btn choice ${c.id === recId ? 'recommended' : ''}`}
                     onClick={() => setPicked(c)}
                   >
-                    {c.id === recId && <span className="choice-rec">✓ Recommended</span>}
                     <span className="choice-label">{c.label}</span>
-                    {c.tag && <span className={`choice-tag tag-${tagClass(c.tag)}`}>{c.tag}</span>}
+                    {showRecs && c.tag && (
+                      <span className={`choice-tag tag-${tagClass(c.tag)}`}>{c.tag}</span>
+                    )}
                   </button>
                 ))}
               </div>

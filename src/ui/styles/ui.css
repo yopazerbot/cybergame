@@ -2025,3 +2025,33 @@ html.attacker-mode kbd {
 .net-dock .net-node-label {
   display: none;
 }
+
+/* -------------------------------------------- wider, two-column start screen */
+.start-card {
+  max-width: 1040px;
+}
+.start-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 26px;
+  text-align: left;
+  align-items: start;
+  margin-top: 8px;
+}
+.start-col {
+  min-width: 0;
+}
+.start-col .section-title {
+  margin-top: 14px;
+}
+.start-col .section-title:first-child {
+  margin-top: 4px;
+}
+.start-grid .roles {
+  margin: 10px 0;
+}
+@media (max-width: 880px) {
+  .start-grid {
+    grid-template-columns: 1fr;
+  }
+}

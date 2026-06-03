@@ -352,10 +352,11 @@ export class OfficeScene extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.ADD)
       .setDepth(9999);
 
-    // A dark "villain lair" wash for attacker mode (MULTIPLY dims the whole board).
+    // A purple "villain lair" wash for attacker mode. MULTIPLY tints + dims, but
+    // gently (light colour, low alpha) so the world stays clearly readable.
     const big = GRID_SIZE * TILE_H * 4;
     this.darkOverlay = this.add
-      .rectangle(center.x, center.y, big, big, 0x140a24, 1)
+      .rectangle(center.x, center.y, big, big, 0x8f7fc0, 0.45)
       .setBlendMode(Phaser.BlendModes.MULTIPLY)
       .setDepth(9998)
       .setVisible(false);

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../useStore';
 import { Timer } from './Timer';
 import { sfx } from '../../core/sfx';
+import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
 import { meterLabels } from '../../scenario/campaign';
 
@@ -51,6 +52,13 @@ export function Hud() {
     setMuted(next);
   };
 
+  const restart = () => {
+    if (window.confirm('Restart the game? Your progress in this run will be lost.')) {
+      store.reset();
+      eventBus.emit('restart', undefined);
+    }
+  };
+
   return (
     <div className="hud">
       <Timer clock={state.clock} mode={state.mode} />
@@ -83,6 +91,9 @@ export function Hud() {
           <span className="score-cap">pts</span>
         </div>
         <div className="hud-buttons">
+          <button className="mute-btn" onClick={restart} title="Restart game">
+            🔄
+          </button>
           <button
             className="mute-btn"
             onClick={() => eventBus.emit('startTutorial', undefined)}
