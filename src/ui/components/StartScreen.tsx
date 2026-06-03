@@ -84,6 +84,7 @@ export function StartScreen() {
           )}
         </div>
 
+        <h3 className="section-title">👥 Your incident team</h3>
         <div className="roles">
           {STAKEHOLDERS.map((s) => (
             <div className="role-chip" key={s.id} title={s.blurb}>
@@ -96,6 +97,7 @@ export function StartScreen() {
           ))}
         </div>
 
+        <h3 className="section-title">🎮 How to play</h3>
         <div className="howto">
           <div className="howto-step">
             <span className="howto-ico">🖱️</span>
@@ -123,49 +125,58 @@ export function StartScreen() {
           </div>
         </div>
 
-        <div className="difficulty">
-          <span className="difficulty-label">Difficulty</span>
-          <div className="seg">
-            {DIFFS.map((d) => (
-              <button
-                key={d}
-                className={`seg-btn ${diff === d ? 'active' : ''}`}
-                onClick={() => pick(d)}
-              >
-                {DIFFICULTY[d].label}
-                <em>
-                  {DIFFICULTY[d].maxInjects} {DIFFICULTY[d].maxInjects === 1 ? 'crisis' : 'crises'}
-                </em>
-              </button>
-            ))}
-          </div>
-        </div>
+        <h3 className="section-title">⚙️ Set up your run</h3>
+        <div className="setup-panel">
+          <div className="setup-grid">
+            <div className="difficulty">
+              <span className="difficulty-label">Difficulty</span>
+              <div className="seg">
+                {DIFFS.map((d) => (
+                  <button
+                    key={d}
+                    className={`seg-btn ${diff === d ? 'active' : ''}`}
+                    onClick={() => pick(d)}
+                  >
+                    {DIFFICULTY[d].label}
+                    <em>
+                      {DIFFICULTY[d].maxInjects}{' '}
+                      {DIFFICULTY[d].maxInjects === 1 ? 'crisis' : 'crises'}
+                    </em>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <div className="difficulty">
-          <span className="difficulty-label">Recommendations</span>
-          <div className="seg">
-            <button className={`seg-btn ${rec ? 'active' : ''}`} onClick={() => pickRec(true)}>
-              On
-              <em>guided</em>
-            </button>
-            <button className={`seg-btn ${!rec ? 'active' : ''}`} onClick={() => pickRec(false)}>
-              Off
-              <em>solo</em>
-            </button>
+            <div className="difficulty">
+              <span className="difficulty-label">Recommendations</span>
+              <div className="seg">
+                <button className={`seg-btn ${rec ? 'active' : ''}`} onClick={() => pickRec(true)}>
+                  On
+                  <em>guided</em>
+                </button>
+                <button
+                  className={`seg-btn ${!rec ? 'active' : ''}`}
+                  onClick={() => pickRec(false)}
+                >
+                  Off
+                  <em>solo</em>
+                </button>
+              </div>
+            </div>
           </div>
+          <p className="rec-hint">
+            {rec
+              ? 'Dialogs highlight the GDPR-recommended choice. Your score goes on the guided board.'
+              : 'No hints in dialogs — you decide unaided. Your score goes on the solo board.'}
+          </p>
         </div>
-        <p className="rec-hint">
-          {rec
-            ? 'Dialogs highlight the GDPR-recommended choice. Your score goes on the guided board.'
-            : 'No hints in dialogs — you decide unaided. Your score goes on the solo board.'}
-        </p>
 
         <button className="btn primary big" onClick={start}>
           ▶ Start the incident
         </button>
 
         <div className="leaderboard-block">
-          <h3>🏆 Global leaderboards</h3>
+          <h3 className="section-title">🏆 Global leaderboards</h3>
           <div className="board-split">
             <div className="board-col">
               <h4>🎯 Solo · no hints</h4>

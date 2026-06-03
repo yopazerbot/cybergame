@@ -1843,3 +1843,39 @@ kbd {
   color: #9a7b30;
   text-transform: uppercase;
 }
+
+/* ---------------------------------------------- start screen organisation */
+.section-title {
+  text-align: left;
+  font-size: 15px;
+  color: var(--ink);
+  margin: 22px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.leaderboard-block .section-title {
+  margin-top: 4px;
+}
+.setup-panel {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+.setup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.setup-panel .difficulty {
+  margin: 0;
+}
+.setup-panel .rec-hint {
+  margin: 12px 0 0;
+  text-align: center;
+}
+@media (max-width: 560px) {
+  .setup-grid {
+    grid-template-columns: 1fr;
+  }
+}
