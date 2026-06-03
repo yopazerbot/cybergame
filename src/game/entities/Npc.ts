@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { isoDepth } from '../iso';
 import { TEX_RING } from '../TextureFactory';
+import { ART_INV } from '../../core/config';
 import type { Stakeholder } from '../../scenario/stakeholders';
 
 type ToWorld = (gx: number, gy: number) => { x: number; y: number };
@@ -21,10 +22,14 @@ export class Npc extends Phaser.GameObjects.Container {
     this.ring = scene.add
       .image(0, 6, TEX_RING)
       .setOrigin(0.5, 0.5)
+      .setScale(ART_INV)
       .setTint(stakeholder.colors.body)
       .setAlpha(0.0);
 
-    const body = scene.add.image(0, 0, `char_${stakeholder.id}`).setOrigin(0.5, 0.92);
+    const body = scene.add
+      .image(0, 0, `char_${stakeholder.id}`)
+      .setOrigin(0.5, 0.92)
+      .setScale(ART_INV);
 
     // Bobbing down-chevron to draw the eye when there's something to do.
     this.arrow = scene.add
@@ -53,7 +58,7 @@ export class Npc extends Phaser.GameObjects.Container {
     });
     scene.tweens.add({
       targets: this.ring,
-      scale: { from: 0.9, to: 1.12 },
+      scale: { from: 0.9 * ART_INV, to: 1.12 * ART_INV },
       duration: 850,
       yoyo: true,
       repeat: -1,

@@ -3,6 +3,15 @@
 export const TILE_W = 64;
 export const TILE_H = 32;
 
+/**
+ * Texture supersampling factor. Every procedural texture is generated at
+ * ART_SCALE× its logical size and displayed at 1/ART_SCALE, so the camera's
+ * fit-zoom (up to 2.0×) no longer blurs the art. 3 leaves headroom over max
+ * zoom; drop to 2 if a device shows texture-memory pressure.
+ */
+export const ART_SCALE = 3;
+export const ART_INV = 1 / ART_SCALE;
+
 /** Top-down square tile size (px). */
 export const TILE = 48;
 

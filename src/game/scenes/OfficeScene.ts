@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
-import { GRID_SIZE, TILE_H, HOURS_PER_REAL_SECOND, DIFFICULTY } from '../../core/config';
+import { GRID_SIZE, TILE_H, ART_INV, HOURS_PER_REAL_SECOND, DIFFICULTY } from '../../core/config';
 import { gridToWorld, worldToGrid, isoDepth } from '../iso';
 import { findPath } from '../pathfinding';
 import { Player } from '../entities/Player';
 import { Npc } from '../entities/Npc';
-import { TEX_RING, TEX_TILE_HI, TEX_RUG, TEX_SHADOW } from '../TextureFactory';
+import { addArt, TEX_RING, TEX_TILE_HI, TEX_RUG, TEX_SHADOW } from '../TextureFactory';
 import { store } from '../../core/store';
 import { eventBus } from '../../core/eventBus';
 import { sfx } from '../../core/sfx';
@@ -101,7 +101,7 @@ export class OfficeScene extends Phaser.Scene {
         const { x, y } = this.toWorld(gx, gy);
         let key = (gx + gy) % 2 === 0 ? 'floor_a' : 'floor_b';
         if (ACCENT_TILES.has(`${gx},${gy}`)) key = 'floor_accent';
-        this.add.image(x, y, key).setOrigin(0.5, 0.5).setDepth(isoDepth(gx, gy, -2));
+        addArt(this, x, y, key).setOrigin(0.5, 0.5).setDepth(isoDepth(gx, gy, -2));
       }
     }
   }
@@ -120,8 +120,7 @@ export class OfficeScene extends Phaser.Scene {
       for (const t of tiles) {
         if (t.gx <= 0 || t.gy <= 0 || t.gx >= GRID_SIZE || t.gy >= GRID_SIZE) continue;
         const { x, y } = this.toWorld(t.gx, t.gy);
-        this.add
-          .image(x, y, TEX_RUG)
+        addArt(this, x, y, TEX_RUG)
           .setOrigin(0.5, 0.5)
           .setTint(s.colors.body)
           .setAlpha(0.22)
@@ -153,7 +152,7 @@ export class OfficeScene extends Phaser.Scene {
     }
     for (const f of FURNITURE) {
       const { x, y } = this.toWorld(f.gx, f.gy);
-      this.add.image(x, y, TEX_SHADOW).setOrigin(0.5, 0.5).setDepth(isoDepth(f.gx, f.gy, 0));
+      addArt(this, x, y, TEX_SHADOW).setOrigin(0.5, 0.5).setDepth(isoDepth(f.gx, f.gy, 0));
       this.placeBox(f.gx, f.gy, f.key);
     }
   }
@@ -161,27 +160,24 @@ export class OfficeScene extends Phaser.Scene {
   private placeBox(gx: number, gy: number, key: string): void {
     const { x, y } = this.toWorld(gx, gy);
     // Origin (0.5,1) at the tile's bottom vertex makes the footprint overlay the floor tile.
-    this.add
-      .image(x, y + TILE_H / 2, key)
+    addArt(this, x, y + TILE_H / 2, key)
       .setOrigin(0.5, 1)
       .setDepth(isoDepth(gx, gy, 1));
   }
 
   private createMarker(): void {
-    this.hover = this.add
-      .image(0, 0, TEX_TILE_HI)
+    this.hover = addArt(this, 0, 0, TEX_TILE_HI)
       .setOrigin(0.5, 0.5)
       .setVisible(false)
       .setAlpha(0.9);
-    this.marker = this.add
-      .image(0, 0, TEX_RING)
+    this.marker = addArt(this, 0, 0, TEX_RING)
       .setOrigin(0.5, 0.5)
       .setTint(0x2d6cdf)
       .setAlpha(0.85)
       .setVisible(false);
     this.tweens.add({
       targets: this.marker,
-      scale: { from: 0.85, to: 1.05 },
+      scale: { from: 0.85 * ART_INV, to: 1.05 * ART_INV },
       duration: 600,
       yoyo: true,
       repeat: -1,

@@ -1,8 +1,21 @@
 import Phaser from 'phaser';
-import { TILE_W, TILE_H } from '../core/config';
+import { TILE_W, TILE_H, ART_SCALE, ART_INV } from '../core/config';
 import { STAKEHOLDERS } from '../scenario/stakeholders';
 
 // Generates every texture the game needs at runtime — no external art assets.
+// Each texture is rendered at ART_SCALE× (the Graphics scale is baked into the
+// canvas before generateTexture replays the path), then displayed at 1/ART_SCALE
+// via addArt — so the camera zoom never upscales a 1× bitmap (= no blur).
+
+/** Add a supersampled texture to the scene at its logical (1×) display size. */
+export function addArt(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  key: string,
+): Phaser.GameObjects.Image {
+  return scene.add.image(x, y, key).setScale(ART_INV);
+}
 
 const FLOOR_A = 0xeef2fb;
 const FLOOR_B = 0xe2e8f6;
@@ -38,7 +51,8 @@ function makeFloor(scene: Phaser.Scene, key: string, fill: number, edge = FLOOR_
   );
   g.lineStyle(1, edge, 0.9);
   g.strokePoints(diamondPoints(), true);
-  g.generateTexture(key, TILE_W, TILE_H);
+  g.setScale(ART_SCALE);
+  g.generateTexture(key, TILE_W * ART_SCALE, TILE_H * ART_SCALE);
   g.destroy();
 }
 
@@ -51,7 +65,8 @@ function makeDiamond(scene: Phaser.Scene, key: string, stroke = false): void {
     g.lineStyle(3, 0xffffff, 1);
     g.strokePoints(diamondPoints(2, 2, 0.92, 0.92), true);
   }
-  g.generateTexture(key, TILE_W, TILE_H);
+  g.setScale(ART_SCALE);
+  g.generateTexture(key, TILE_W * ART_SCALE, TILE_H * ART_SCALE);
   g.destroy();
 }
 
@@ -60,7 +75,8 @@ function makeTileHighlight(scene: Phaser.Scene, key: string): void {
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   g.lineStyle(2.5, 0xffffff, 0.95);
   g.strokePoints(diamondPoints(2, 2, 0.93, 0.93), true);
-  g.generateTexture(key, TILE_W, TILE_H);
+  g.setScale(ART_SCALE);
+  g.generateTexture(key, TILE_W * ART_SCALE, TILE_H * ART_SCALE);
   g.destroy();
 }
 
@@ -102,7 +118,8 @@ function makeBox(
 
   if (decorate) decorate(g, h);
 
-  g.generateTexture(key, TILE_W, TILE_H + h);
+  g.setScale(ART_SCALE);
+  g.generateTexture(key, TILE_W * ART_SCALE, (TILE_H + h) * ART_SCALE);
   g.destroy();
 }
 
@@ -191,7 +208,8 @@ function makeCharacter(scene: Phaser.Scene, key: string, body: number, accent: n
   g.arc(cx, 21, 4.5, 0.18 * Math.PI, 0.82 * Math.PI, false);
   g.strokePath();
 
-  g.generateTexture(key, w, h);
+  g.setScale(ART_SCALE);
+  g.generateTexture(key, w * ART_SCALE, h * ART_SCALE);
   g.destroy();
 }
 
@@ -200,7 +218,8 @@ function makeShadow(scene: Phaser.Scene, key: string): void {
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   g.fillStyle(0x16203a, 0.16);
   g.fillEllipse(TILE_W / 2, TILE_H / 2, TILE_W * 0.7, TILE_H * 0.62);
-  g.generateTexture(key, TILE_W, TILE_H);
+  g.setScale(ART_SCALE);
+  g.generateTexture(key, TILE_W * ART_SCALE, TILE_H * ART_SCALE);
   g.destroy();
 }
 

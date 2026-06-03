@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { CHAR_PLAYER, TEX_RING } from '../TextureFactory';
+import { ART_INV } from '../../core/config';
 import { isoDepth } from '../iso';
 
 type ToWorld = (gx: number, gy: number) => { x: number; y: number };
@@ -25,18 +26,19 @@ export class Player extends Phaser.GameObjects.Container {
     const ring = scene.add
       .image(0, 6, TEX_RING)
       .setOrigin(0.5, 0.5)
+      .setScale(ART_INV)
       .setTint(0x2d6cdf)
       .setAlpha(0.4);
     scene.tweens.add({
       targets: ring,
-      scale: { from: 0.92, to: 1.08 },
+      scale: { from: 0.92 * ART_INV, to: 1.08 * ART_INV },
       duration: 1100,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.inOut',
     });
 
-    this.avatar = scene.add.image(0, 0, CHAR_PLAYER).setOrigin(0.5, 0.92);
+    this.avatar = scene.add.image(0, 0, CHAR_PLAYER).setOrigin(0.5, 0.92).setScale(ART_INV);
 
     const badge = this.makeBadge(scene);
 
@@ -47,7 +49,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.bob = scene.tweens.add({
       targets: this.avatar,
       y: -4,
-      scaleY: 0.94,
+      scaleY: ART_INV * 0.94,
       duration: 170,
       yoyo: true,
       repeat: -1,
@@ -93,7 +95,7 @@ export class Player extends Phaser.GameObjects.Container {
 
   private stopWalk(): void {
     this.bob.pause();
-    this.avatar.setY(0).setScale(1, 1);
+    this.avatar.setY(0).setScale(ART_INV, ART_INV);
   }
 
   moveAlongPath(path: { gx: number; gy: number }[], onArrive: () => void): void {
