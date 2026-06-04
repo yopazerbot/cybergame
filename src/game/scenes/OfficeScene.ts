@@ -236,10 +236,14 @@ export class OfficeScene extends Phaser.Scene {
     // Fit the room to ~85% of the viewport so it fills the screen like a real room.
     const boardW = GRID_SIZE * TILE_H * 2; // diamond width ≈ GRID*TILE_W
     const boardH = GRID_SIZE * TILE_H + 150; // floor depth + wall/character height
+    // The game runs in physical pixels (canvas backing = CSS px × dpr for crisp
+    // HiDPI rendering), so zoom limits scale by that same ratio to keep framing
+    // identical across displays. displayScale.x == physical/CSS == effective dpr.
+    const k = this.scale.displayScale.x || 1;
     const zoom = Phaser.Math.Clamp(
       Math.min((cam.width * 0.86) / boardW, (cam.height * 0.86) / boardH),
-      0.55,
-      2.0,
+      0.55 * k,
+      2.0 * k,
     );
     cam.setZoom(zoom);
     cam.centerOn(center.x, center.y - 6);
@@ -253,7 +257,8 @@ export class OfficeScene extends Phaser.Scene {
     if (p1?.isDown && p2?.isDown) {
       const d = Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y);
       if (this.pinchDist > 0 && d > 0) {
-        cam.setZoom(Phaser.Math.Clamp(cam.zoom * (d / this.pinchDist), 0.3, 3.5));
+        const k = this.scale.displayScale.x || 1;
+        cam.setZoom(Phaser.Math.Clamp(cam.zoom * (d / this.pinchDist), 0.3 * k, 3.5 * k));
         this.clampCamera();
       }
       this.pinchDist = d;
@@ -299,7 +304,8 @@ export class OfficeScene extends Phaser.Scene {
     }
     const cam = this.cameras.main;
     const factor = dir === 'in' ? 1.2 : 1 / 1.2;
-    cam.setZoom(Phaser.Math.Clamp(cam.zoom * factor, 0.3, 3.5));
+    const k = this.scale.displayScale.x || 1;
+    cam.setZoom(Phaser.Math.Clamp(cam.zoom * factor, 0.3 * k, 3.5 * k));
     this.clampCamera();
   }
 
@@ -309,7 +315,8 @@ export class OfficeScene extends Phaser.Scene {
       (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
         const cam = this.cameras.main;
         const factor = dy > 0 ? 1 / 1.1 : 1.1;
-        cam.setZoom(Phaser.Math.Clamp(cam.zoom * factor, 0.3, 3.5));
+        const k = this.scale.displayScale.x || 1;
+        cam.setZoom(Phaser.Math.Clamp(cam.zoom * factor, 0.3 * k, 3.5 * k));
         this.clampCamera();
       },
     );
