@@ -93,6 +93,7 @@ export class OfficeScene extends Phaser.Scene {
   private marker!: Phaser.GameObjects.Image;
   private hover!: Phaser.GameObjects.Image;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
+  private wasd?: Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key>;
   private dragging = false;
   private downAt = { x: 0, y: 0 };
   private panLast = { x: 0, y: 0 };
@@ -724,8 +725,15 @@ export class OfficeScene extends Phaser.Scene {
       }
     });
 
-    // Arrow keys walk the avatar one tile in a screen direction.
+    // Arrow keys + WASD walk the avatar one tile in a screen direction.
     this.cursors = this.input.keyboard?.createCursorKeys();
+    this.wasd = this.input.keyboard?.addKeys(
+      { up: Phaser.Input.Keyboard.KeyCodes.W,
+        down: Phaser.Input.Keyboard.KeyCodes.S,
+        left: Phaser.Input.Keyboard.KeyCodes.A,
+        right: Phaser.Input.Keyboard.KeyCodes.D },
+      false,
+    ) as Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key>;
   }
 
   // A genuine tap (not a drag-pan): walk there, or talk to an adjacent NPC.
@@ -769,19 +777,22 @@ export class OfficeScene extends Phaser.Scene {
   private tryKeyboardMove(): void {
     if (this.player.moving) return;
     const c = this.cursors;
-    if (!c) return;
+    const w = this.wasd;
+    // Arrow keys and WASD are equivalent; either direction steps one iso tile.
+    const held = (dir: 'up' | 'down' | 'left' | 'right') =>
+      Boolean(c?.[dir].isDown) || Boolean(w?.[dir].isDown);
     let dgx = 0;
     let dgy = 0;
-    if (c.up.isDown) {
+    if (held('up')) {
       dgx = -1;
       dgy = -1;
-    } else if (c.down.isDown) {
+    } else if (held('down')) {
       dgx = 1;
       dgy = 1;
-    } else if (c.left.isDown) {
+    } else if (held('left')) {
       dgx = -1;
       dgy = 1;
-    } else if (c.right.isDown) {
+    } else if (held('right')) {
       dgx = 1;
       dgy = -1;
     } else {

@@ -21,14 +21,24 @@ export function DialoguePanel({ npcId }: { npcId: Role }) {
 
   const close = () => store.setState({ ...store.getState(), activeDialogue: null });
 
-  // Esc closes the dialogue (same as "Leave").
+  // Esc closes the dialogue (same as "Leave"); number keys pick a choice fast.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
+      if (e.key === 'Escape') {
+        close();
+        return;
+      }
+      if (node && !picked && /^[1-9]$/.test(e.key)) {
+        const choice = node.choices[Number(e.key) - 1];
+        if (choice) {
+          e.preventDefault();
+          setPicked(choice);
+        }
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [node?.id, picked]);
 
   // Put initial focus on the recommended choice (or the first) when choices show.
   useEffect(() => {
@@ -81,6 +91,9 @@ export function DialoguePanel({ npcId }: { npcId: Role }) {
                     onClick={() => setPicked(c)}
                     onKeyDown={(e) => onChoiceKey(e, i, node.choices.length)}
                   >
+                    <span className="choice-num" aria-hidden="true">
+                      {i + 1}
+                    </span>
                     <span className="choice-label">{c.label}</span>
                     {showRecs && c.tag && (
                       <span className={`choice-tag tag-${tagClass(c.tag)}`}>{c.tag}</span>

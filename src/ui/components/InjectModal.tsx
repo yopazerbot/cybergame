@@ -42,6 +42,21 @@ export function InjectModal({ injectId }: { injectId: string }) {
     return () => clearInterval(t);
   }, [injectId]);
 
+  // Number keys pick a response fast — valuable under the live countdown.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!inject || done.current || !/^[1-9]$/.test(e.key)) return;
+      const choice = inject.choices[Number(e.key) - 1];
+      if (choice) {
+        e.preventDefault();
+        done.current = true;
+        resolveInject(inject.id, choice.id);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [injectId]);
+
   if (!inject) return null;
 
   const pick = (choiceId: string) => {
@@ -83,6 +98,9 @@ export function InjectModal({ injectId }: { injectId: string }) {
               onClick={() => pick(c.id)}
               onKeyDown={(e) => onChoiceKey(e, i, inject.choices.length)}
             >
+              <span className="choice-num" aria-hidden="true">
+                {i + 1}
+              </span>
               <span className="inject-choice-label">{c.label}</span>
               {c.tag && <span className="inject-choice-tag">{c.tag}</span>}
             </button>

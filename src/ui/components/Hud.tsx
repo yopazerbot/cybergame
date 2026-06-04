@@ -86,6 +86,9 @@ export function Hud() {
       if (e.key === 'r' || e.key === 'R') restart();
       else if (e.key === 'm' || e.key === 'M') toggleMute();
       else if (e.key === '?') eventBus.emit('startTutorial', undefined);
+      else if (e.key === '+' || e.key === '=') eventBus.emit('zoom', { dir: 'in' });
+      else if (e.key === '-' || e.key === '_') eventBus.emit('zoom', { dir: 'out' });
+      else if (e.key === '0') eventBus.emit('zoom', { dir: 'reset' });
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
