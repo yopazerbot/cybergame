@@ -345,6 +345,30 @@ html.attacker-mode .start-cta:hover {
   border-top: 1px solid var(--line);
 }
 
+/* Anchor the role / how-to emoji in a theme-aware tile and add a soft hover so
+   the cards feel interactive (both carry a tooltip). */
+.start-card .role-emoji,
+.start-card .howto-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 19px;
+  background: color-mix(in srgb, var(--brand) 12%, var(--paper));
+  flex-shrink: 0;
+}
+.start-card .role-chip,
+.start-card .howto-step {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.start-card .role-chip:hover,
+.start-card .howto-step:hover {
+  border-color: color-mix(in srgb, var(--brand) 40%, var(--line));
+  box-shadow: 0 4px 12px rgba(24, 38, 74, 0.08);
+}
+
 /* Respect reduced-motion: no entrance animation or hover lift. */
 @media (prefers-reduced-motion: reduce) {
   .start-card {
