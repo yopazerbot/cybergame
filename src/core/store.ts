@@ -1,11 +1,15 @@
 import type { GameState, Difficulty, Mode } from './types';
-import { DIFFICULTY, DEADLINE_HOURS } from './config';
+import { DIFFICULTY, DEADLINE_HOURS, METER_JITTER } from './config';
 import { eventBus } from './eventBus';
 import { buildObjectives } from '../scenario/objectives';
 import { initialNetwork } from '../scenario/network';
 
 // Tiny observable store — the single source of truth.
 // Phaser and React both read via getState() and subscribe via subscribe().
+
+// Per-run variety: nudge a baseline meter by ±range, clamped to 0..100.
+const jitter = (base: number, range: number) =>
+  Math.max(0, Math.min(100, Math.round(base + (Math.random() * 2 - 1) * range)));
 
 function initialState(
   difficulty: Difficulty = 'normal',
@@ -20,7 +24,11 @@ function initialState(
     recommendations,
     phase: mode === 'attacker' ? 'recon' : 'detection',
     clock: { hoursElapsed: 0, deadlineHours: DEADLINE_HOURS },
-    meters: { reputation: d.reputation, compliance: d.compliance, cost: d.cost },
+    meters: {
+      reputation: jitter(d.reputation, METER_JITTER.reputation),
+      compliance: jitter(d.compliance, METER_JITTER.compliance),
+      cost: jitter(d.cost, METER_JITTER.cost),
+    },
     score: 0,
     flags: {},
     resolvedNodes: [],

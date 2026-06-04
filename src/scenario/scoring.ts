@@ -7,6 +7,7 @@ import {
   MAX_FINE,
   COST_EURO_PER_POINT,
   DIFFICULTY,
+  THREAT_ESCALATION,
 } from '../core/config';
 import { store } from '../core/store';
 import { eventBus } from '../core/eventBus';
@@ -351,7 +352,7 @@ export function advanceClock(hours: number): void {
     ? applyNetworkTransitions(state, {
         ...state,
         clock,
-        network: tickNetwork(state.network, hours, DIFFICULTY[state.difficulty].threat),
+        network: tickNetwork(state.network, hours, threatSpeed(state)),
       })
     : { ...state, clock };
   next = { ...next, score: computeScore(next) };
@@ -373,6 +374,26 @@ export function advanceClock(hours: number): void {
 }
 
 // ---------------------------------------------------------------- containment map
+
+/**
+ * The clock bites: spread/exfil speed = base difficulty threat scaled up the
+ * longer the breach runs uncontained. Dawdling lets the attacker accelerate.
+ */
+export function threatSpeed(state: GameState): number {
+  const progress = Math.min(1, state.clock.hoursElapsed / state.clock.deadlineHours);
+  return DIFFICULTY[state.difficulty].threat * (1 + THREAT_ESCALATION * progress);
+}
+
+/** Spendable IR budget left for containment actions (cost-meter headroom). */
+export function responseBudgetLeft(state: GameState): number {
+  return Math.max(0, DIFFICULTY[state.difficulty].budget - state.meters.cost);
+}
+
+/** Can the player still afford a containment action of this cost? */
+export function canAfford(state: GameState, cost: number): boolean {
+  return state.meters.cost + cost <= DIFFICULTY[state.difficulty].budget;
+}
+
 /** Apply meter/flag consequences when the network crosses key thresholds. */
 function applyNetworkTransitions(prev: GameState, next: GameState): GameState {
   const meters = { ...next.meters };
@@ -399,6 +420,15 @@ function applyNetworkTransitions(prev: GameState, next: GameState): GameState {
 function commitNetwork(net: NetworkState, spec: { hours: number; cost: number }): void {
   const state = store.getState();
   if (state.gamePhase !== 'playing') return;
+  // Containment draws on a finite response budget — spend it where it counts.
+  if (!canAfford(state, spec.cost)) {
+    eventBus.emit('notify', {
+      text: 'Response budget exhausted — you can’t fund more containment',
+      tone: 'bad',
+    });
+    sfx.bad();
+    return;
+  }
   const meters = { ...state.meters, cost: clamp(state.meters.cost + spec.cost) };
   const clock = { ...state.clock, hoursElapsed: state.clock.hoursElapsed + spec.hours };
   let next: GameState = applyNetworkTransitions(state, { ...state, network: net, meters, clock });

@@ -27,10 +27,24 @@ export const DEADLINE_HOURS = 72;
  * the scenario starts (the meters) and how many crisis injects can fire.
  */
 export const DIFFICULTY = {
-  easy: { label: 'Easy', maxInjects: 1, threat: 0.7, reputation: 75, compliance: 66, cost: 8 },
-  normal: { label: 'Normal', maxInjects: 3, threat: 1.0, reputation: 70, compliance: 60, cost: 10 },
-  hard: { label: 'Hard', maxInjects: 5, threat: 1.45, reputation: 62, compliance: 52, cost: 14 },
+  easy: { label: 'Easy', maxInjects: 1, threat: 0.7, reputation: 75, compliance: 66, cost: 8, budget: 95 },
+  normal: { label: 'Normal', maxInjects: 3, threat: 1.0, reputation: 70, compliance: 60, cost: 10, budget: 82 },
+  hard: { label: 'Hard', maxInjects: 5, threat: 1.45, reputation: 62, compliance: 52, cost: 14, budget: 70 },
 } as const;
+
+/**
+ * The clock bites: the longer the intrusion runs uncontained, the faster the
+ * attacker spreads and exfiltrates. Spread/exfil speed is scaled by
+ * 1 + THREAT_ESCALATION × (hoursElapsed / deadline), so dawdling is punished —
+ * at the 72h deadline the attacker moves THREAT_ESCALATION× faster than at h0.
+ */
+export const THREAT_ESCALATION = 0.7;
+
+/**
+ * Per-run variety: starting meters are jittered ± these amounts around the
+ * difficulty baseline so no two runs open from an identical position.
+ */
+export const METER_JITTER = { reputation: 4, compliance: 4, cost: 3 } as const;
 
 /**
  * Baseline passive clock drift: real seconds -> game hours.

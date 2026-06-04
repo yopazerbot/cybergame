@@ -1424,6 +1424,38 @@ kbd {
   color: var(--ink);
 }
 
+/* Spendable response budget — mirrors the exfil bar but reads as a resource. */
+.net-budget {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 10px;
+}
+.net-budget-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.net-budget-bar > div {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--good);
+  transition: width 0.3s ease;
+}
+.net-budget-bar > div.crit {
+  background: var(--bad);
+}
+.net-budget strong {
+  color: var(--ink);
+}
+.net-hint.warn {
+  color: var(--bad);
+}
+
 .net-svg {
   width: 100%;
   height: auto;
@@ -1996,7 +2028,8 @@ html.attacker-mode kbd {
   font-size: 12px;
   padding-top: 0;
 }
-.net-dock .net-exfil {
+.net-dock .net-exfil,
+.net-dock .net-budget {
   font-size: 11px;
   gap: 6px;
   margin-bottom: 8px;

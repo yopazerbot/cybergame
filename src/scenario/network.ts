@@ -55,11 +55,20 @@ const EDGES: [string, string][] = [
 ];
 
 export function initialNetwork(): NetworkState {
+  // Run-to-run variety: WKS-FIN-07 is always patient zero (the C2 entry point),
+  // but how far the kill chain has already pivoted by detection time varies — so
+  // the opening threat picture (and how much time you really have) differs each run.
+  const dcSeeded = Math.random() < 0.5; // sometimes the DC is already taken too
+  const headStart = () => Math.random() * SPREAD_INTERVAL_H * 0.6; // partial progress to next hop
+
   const hosts: Record<string, Host> = {};
   for (const d of HOST_DEFS) {
-    // The kill-chain has already pivoted off patient zero by detection time.
-    const compromised = d.id === 'wks' || d.id === 'dc';
-    hosts[d.id] = { ...d, status: compromised ? 'compromised' : 'secure', sinceInfectedH: 0 };
+    const compromised = d.id === 'wks' || (d.id === 'dc' && dcSeeded);
+    hosts[d.id] = {
+      ...d,
+      status: compromised ? 'compromised' : 'secure',
+      sinceInfectedH: compromised ? headStart() : 0,
+    };
   }
   return { hosts, edges: EDGES, c2Blocked: false, credsRotated: false, exfilPct: 0 };
 }

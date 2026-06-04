@@ -198,6 +198,109 @@ export const INJECTS: Inject[] = [
       },
     ],
   },
+
+  // ---- Consequence chains: these only fire BECAUSE of an earlier choice. ----
+
+  // Fires only if you denied the press (press_leak → deny).
+  {
+    id: 'deny_backfires',
+    afterHours: 12,
+    requireFlags: ['pressDenied'],
+    excludeFlags: ['pressRetracted'],
+    kicker: 'BREAKING — Follow-up',
+    icon: '🗞️',
+    heading: 'Your denial just got contradicted',
+    text:
+      'The reporter published leaked internal tickets proving the breach you denied. "Company ' +
+      'misled the public," the headline reads. The board is furious. This is the fallout from the denial.',
+    seconds: 24,
+    defaultChoice: 1,
+    choices: [
+      {
+        id: 'retract',
+        label: 'Retract, correct the record, apologise',
+        tag: 'best practice',
+        effects: { reputation: 6, compliance: 2, setFlags: ['pressRetracted'] },
+        feedback:
+          'Owning the correction fast caps the damage. A misstatement you fix beats one you defend.',
+      },
+      {
+        id: 'doubledown',
+        label: 'Double down on the denial',
+        tag: 'risky',
+        effects: { reputation: -16, compliance: -6, setFlags: ['pressRetracted', 'deepCoverup'] },
+        feedback:
+          'Defending a now-disproven denial is how a breach becomes a credibility scandal. Worst case.',
+      },
+    ],
+  },
+
+  // Fires only if you restored a tainted backup (backup_encrypted → risky_restore).
+  {
+    id: 'reinfection_hits',
+    afterHours: 18,
+    requireFlags: ['reinfectionRisk'],
+    excludeFlags: ['reinfectionCleared'],
+    kicker: 'SOC ALERT — EDR',
+    icon: '♻️',
+    heading: 'The restored system is beaconing again',
+    text:
+      'The backup you restored to save time carried the attacker’s persistence — fresh C2 traffic ' +
+      'is back from the "recovered" host. The shortcut reopened the door.',
+    seconds: 22,
+    defaultChoice: 1,
+    choices: [
+      {
+        id: 'cleanrebuild',
+        label: 'Take it down, rebuild clean this time',
+        tag: 'best practice',
+        effects: { compliance: 6, cost: 8, timeCostHours: 3, setFlags: ['reinfectionCleared'] },
+        feedback: 'Doing it right the second time stops the loop. Reinfection is why clean-room recovery exists.',
+      },
+      {
+        id: 'patchpray',
+        label: 'Kill the beacon and keep running',
+        tag: 'risky',
+        effects: { compliance: -9, reputation: -3, timeCostHours: 2, setFlags: ['reinfectionCleared'] },
+        feedback:
+          'Swatting the symptom leaves the persistence in place — you’ll keep paying for the rushed restore.',
+      },
+    ],
+  },
+
+  // Fires only if you paid the ransom to hush it up (ceo_ransom → pay sets `coverup`).
+  {
+    id: 'coverup_whistleblower',
+    afterHours: 16,
+    requireFlags: ['coverup'],
+    excludeFlags: ['regulatorNotified', 'whistleblowerHandled'],
+    kicker: 'INTERNAL — HR',
+    icon: '🧑‍⚖️',
+    heading: 'An employee threatens to go public',
+    text:
+      'A team member who knows you quietly paid to bury the breach says they’ll report it to the ' +
+      'authority unless the company notifies properly. The cover-up is unravelling from inside.',
+    seconds: 26,
+    defaultChoice: 1,
+    choices: [
+      {
+        id: 'comeclean',
+        label: 'Stop, disclose properly, notify the authority',
+        tag: 'best practice',
+        effects: { compliance: 8, reputation: 2, setFlags: ['whistleblowerHandled'] },
+        feedback:
+          'Reversing course and notifying — even late — beats a concealed breach exposed by a whistleblower.',
+      },
+      {
+        id: 'pressure',
+        label: 'Pressure them with an NDA to stay silent',
+        tag: 'risky',
+        effects: { compliance: -10, reputation: -8, setFlags: ['whistleblowerHandled', 'deepCoverup'] },
+        feedback:
+          'Silencing a whistleblower compounds the cover-up — exactly the conduct regulators punish hardest.',
+      },
+    ],
+  },
 ];
 
 // Attacker-campaign injects: blue-team pressure events. Meters read as
@@ -308,6 +411,41 @@ export const ATTACKER_INJECTS: Inject[] = [
         feedback:
           'A bulk egress mid-hunt is the loudest possible move — DLP and NetFlow will catch it. High ' +
           'Loot, very high Heat.',
+      },
+    ],
+  },
+
+  // Consequence chain: only fires if you went loud (threat_hunt → hunt_grabnow).
+  {
+    id: 'loud_attribution',
+    afterHours: 22,
+    requireFlags: ['loud'],
+    excludeFlags: ['tracksCovered', 'attributionDodged'],
+    kicker: 'INTEL — Incident response',
+    icon: '🎯',
+    heading: 'Your noisy pull kicked off an IR effort',
+    text:
+      'The bulk egress lit up DLP and the SOC has spun up full incident response — they’re pulling ' +
+      'NetFlow and pivoting on your C2. They are now hunting *you*, specifically. Adapt or get pinned.',
+    seconds: 24,
+    defaultChoice: 1,
+    choices: [
+      {
+        id: 'burn_infra',
+        label: 'Burn the infrastructure, exfil via a fresh channel',
+        tag: 'quiet tradecraft',
+        effects: { compliance: 6, cost: -5, timeCostHours: 3, setFlags: ['attributionDodged'] },
+        feedback:
+          'Rotating C2 infrastructure and redundant egress paths breaks the attribution thread. ' +
+          'This is exactly why defenders need IOC-independent, behavioural detection.',
+      },
+      {
+        id: 'keep_channel',
+        label: 'Keep using the same channel to finish fast',
+        tag: 'loud',
+        effects: { compliance: -7, cost: 11, setFlags: ['attributionDodged', 'gotCaught'] },
+        feedback:
+          'Reusing burned infrastructure under active IR hands the SOC a clean attribution trail. Caught.',
       },
     ],
   },

@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useStore } from '../useStore';
-import { networkIsolate, networkBlockC2, networkRotateCreds } from '../../scenario/scoring';
+import {
+  networkIsolate,
+  networkBlockC2,
+  networkRotateCreds,
+  responseBudgetLeft,
+  canAfford,
+} from '../../scenario/scoring';
 import { isContained, compromisedCount, ACTION_COST } from '../../scenario/network';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -30,6 +36,7 @@ export function ContainmentMap() {
   const [sel, setSel] = useState<string | null>(null);
   const contained = isContained(net);
   const selHost = sel ? byId[sel] : null;
+  const budget = Math.round(responseBudgetLeft(state));
 
   return (
     <div className="net-dock">
@@ -39,6 +46,17 @@ export function ContainmentMap() {
           <div className={`net-status ${contained ? 'good' : 'bad'}`}>
             {contained ? '✅ Contained' : `🔴 ${compromisedCount(net)}`}
           </div>
+        </div>
+
+        <div className="net-budget">
+          <span>Budget</span>
+          <div className="net-budget-bar">
+            <div
+              className={budget <= 12 ? 'crit' : ''}
+              style={{ width: `${Math.min(100, budget)}%` }}
+            />
+          </div>
+          <strong>{budget}</strong>
         </div>
 
         <div className="net-exfil">
@@ -112,25 +130,42 @@ export function ContainmentMap() {
               </span>
               <button
                 className="btn primary"
-                disabled={selHost.status === 'isolated'}
+                disabled={selHost.status === 'isolated' || !canAfford(state, ACTION_COST.isolate.cost)}
                 onClick={() => networkIsolate(selHost.id)}
               >
                 {selHost.status === 'isolated'
                   ? 'Isolated ✓'
-                  : `Isolate host  −${ACTION_COST.isolate.hours}h`}
+                  : `Isolate host  −${ACTION_COST.isolate.hours}h · ${ACTION_COST.isolate.cost}💶`}
               </button>
             </div>
           ) : (
             <span className="net-hint">Select a host to isolate it. The clock keeps ticking.</span>
           )}
           <div className="net-global">
-            <button className="btn" disabled={net.c2Blocked} onClick={() => networkBlockC2()}>
-              {net.c2Blocked ? 'C2 blocked ✓' : `Block C2  −${ACTION_COST.blockC2.hours}h`}
+            <button
+              className="btn"
+              disabled={net.c2Blocked || !canAfford(state, ACTION_COST.blockC2.cost)}
+              onClick={() => networkBlockC2()}
+            >
+              {net.c2Blocked
+                ? 'C2 blocked ✓'
+                : `Block C2  −${ACTION_COST.blockC2.hours}h · ${ACTION_COST.blockC2.cost}💶`}
             </button>
-            <button className="btn" disabled={net.credsRotated} onClick={() => networkRotateCreds()}>
-              {net.credsRotated ? 'Creds rotated ✓' : `Rotate creds  −${ACTION_COST.rotate.hours}h`}
+            <button
+              className="btn"
+              disabled={net.credsRotated || !canAfford(state, ACTION_COST.rotate.cost)}
+              onClick={() => networkRotateCreds()}
+            >
+              {net.credsRotated
+                ? 'Creds rotated ✓'
+                : `Rotate creds  −${ACTION_COST.rotate.hours}h · ${ACTION_COST.rotate.cost}💶`}
             </button>
           </div>
+          {budget <= 12 && !contained && (
+            <span className="net-hint warn">
+              Budget nearly spent — prioritise the highest-value hosts.
+            </span>
+          )}
         </div>
       </div>
     </div>
