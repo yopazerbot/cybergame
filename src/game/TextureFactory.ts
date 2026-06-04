@@ -20,7 +20,6 @@ export function addArt(
 const FLOOR_A = 0xeef2fb;
 const FLOOR_B = 0xe2e8f6;
 const FLOOR_EDGE = 0xcdd8ee;
-const FLOOR_HI = 0xffffff;
 const WALL_TOP = 0xc6d0e4;
 const WALL_LEFT = 0x9aa7c4;
 const WALL_RIGHT = 0x7e8cae;
@@ -57,41 +56,101 @@ function featherEllipse(
   }
 }
 
-function makeFloor(scene: Phaser.Scene, key: string, fill: number, edge = FLOOR_EDGE): void {
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  g.fillStyle(fill, 1);
-  g.fillPoints(diamondPoints(), true);
-  // Subtle top-left highlight wedge for a soft-lit look.
-  g.fillStyle(FLOOR_HI, 0.18);
-  g.fillPoints(
-    [
-      { x: TILE_W / 2, y: 0 },
-      { x: TILE_W, y: TILE_H / 2 },
-      { x: TILE_W / 2, y: TILE_H / 2 },
-    ],
-    true,
-  );
-  // Soft south shade on the lower half: pairs with the highlight so each tile
-  // reads as gently lit from above rather than flat-filled.
-  g.fillStyle(0x16203a, 0.05);
-  g.fillPoints(
-    [
-      { x: 0, y: TILE_H / 2 },
-      { x: TILE_W, y: TILE_H / 2 },
-      { x: TILE_W / 2, y: TILE_H },
-    ],
-    true,
-  );
-  // Inset bevel: a lighter inner ring just inside the grout line.
-  g.lineStyle(1, FLOOR_HI, 0.35);
-  g.strokePoints(diamondPoints(2, 1.5, 0.94, 0.94), true);
-  // Grout edge.
-  g.lineStyle(1, edge, 0.9);
-  g.strokePoints(diamondPoints(), true);
-  g.setScale(ART_SCALE);
-  g.generateTexture(key, TILE_W * ART_SCALE, TILE_H * ART_SCALE);
-  g.destroy();
+/**
+ * Render a texture through the raw 2D canvas context (drawn at ART_SCALE for
+ * supersampling), which — unlike Phaser's flat-fill Graphics — gives real linear
+ * and radial gradients, so surfaces can be genuinely shaded rather than
+ * single-colour. Returns silently if the key already exists.
+ */
+function makeCanvasTexture(
+  scene: Phaser.Scene,
+  key: string,
+  w: number,
+  h: number,
+  draw: (ctx: CanvasRenderingContext2D) => void,
+): void {
+  const tex = scene.textures.createCanvas(key, Math.ceil(w * ART_SCALE), Math.ceil(h * ART_SCALE));
+  if (!tex) return;
+  const ctx = tex.getContext();
+  ctx.save();
+  ctx.scale(ART_SCALE, ART_SCALE);
+  draw(ctx);
+  ctx.restore();
+  tex.refresh();
 }
+
+const toCss = (c: number) => '#' + (c & 0xffffff).toString(16).padStart(6, '0');
+
+/** A CSS colour string for `c`, lightened (pct > 0) or darkened (pct < 0). */
+function shadeCss(c: number, pct: number): string {
+  const col = Phaser.Display.Color.IntegerToColor(c);
+  if (pct >= 0) col.lighten(pct);
+  else col.darken(-pct);
+  return toCss(col.color);
+}
+
+function floorDiamondPath(ctx: CanvasRenderingContext2D, inset = 0): void {
+  const i = inset;
+  ctx.beginPath();
+  ctx.moveTo(TILE_W / 2, i);
+  ctx.lineTo(TILE_W - i, TILE_H / 2);
+  ctx.lineTo(TILE_W / 2, TILE_H - i);
+  ctx.lineTo(i, TILE_H / 2);
+  ctx.closePath();
+}
+
+function makeFloor(scene: Phaser.Scene, key: string, fill: number, edge = FLOOR_EDGE): void {
+  makeCanvasTexture(scene, key, TILE_W, TILE_H, (ctx) => {
+    ctx.save();
+    floorDiamondPath(ctx);
+    ctx.clip();
+
+    // Directional base gradient: lit from the top-left, falling into shadow at
+    // the bottom-right — a real gradient, not a flat fill.
+    const base = ctx.createLinearGradient(0, 0, TILE_W, TILE_H);
+    base.addColorStop(0, shadeCss(fill, 9));
+    base.addColorStop(0.5, shadeCss(fill, 0));
+    base.addColorStop(1, shadeCss(fill, -13));
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, TILE_W, TILE_H);
+
+    // Soft specular pool near the light source.
+    const hi = ctx.createRadialGradient(
+      TILE_W * 0.4,
+      TILE_H * 0.3,
+      1,
+      TILE_W * 0.4,
+      TILE_H * 0.3,
+      TILE_W * 0.62,
+    );
+    hi.addColorStop(0, 'rgba(255,255,255,0.22)');
+    hi.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = hi;
+    ctx.fillRect(0, 0, TILE_W, TILE_H);
+
+    // Fine material grain so the surface isn't a perfectly flat plane.
+    for (let i = 0; i < 26; i++) {
+      ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.05)' : 'rgba(18,26,48,0.05)';
+      ctx.fillRect(Math.random() * TILE_W, Math.random() * TILE_H, 1, 1);
+    }
+    ctx.restore();
+
+    // Inset bevel highlight just inside the grout.
+    ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+    ctx.lineWidth = 1;
+    floorDiamondPath(ctx, 2.5);
+    ctx.stroke();
+
+    // Grout edge.
+    ctx.strokeStyle = toCss(edge);
+    ctx.globalAlpha = 0.9;
+    ctx.lineWidth = 1;
+    floorDiamondPath(ctx);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+}
+
 
 /** A plain white diamond used as a tintable rug / highlight. */
 function makeDiamond(scene: Phaser.Scene, key: string, stroke = false): void {
@@ -152,6 +211,32 @@ function makeBox(
   );
   g.fillStyle(top, 1);
   g.fillPoints(diamondPoints(), true);
+
+  // Top-edge highlight on the side faces: light catches where the faces meet the
+  // lit top, giving each box a soft vertical gradient (bright top → dark base)
+  // once paired with the ambient-occlusion bands below.
+  const hiBand = Math.min(h * 0.45, 14);
+  if (hiBand > 1) {
+    g.fillStyle(0xffffff, 0.09);
+    g.fillPoints(
+      [
+        { x: 0, y: TILE_H / 2 },
+        { x: TILE_W / 2, y: TILE_H },
+        { x: TILE_W / 2, y: TILE_H + hiBand },
+        { x: 0, y: TILE_H / 2 + hiBand },
+      ],
+      true,
+    );
+    g.fillPoints(
+      [
+        { x: TILE_W, y: TILE_H / 2 },
+        { x: TILE_W / 2, y: TILE_H },
+        { x: TILE_W / 2, y: TILE_H + hiBand },
+        { x: TILE_W, y: TILE_H / 2 + hiBand },
+      ],
+      true,
+    );
+  }
 
   // Ambient occlusion: a soft dark gradient at the base of the side faces, so the
   // box reads as grounded on the floor rather than pasted on. A few stacked bands
@@ -378,13 +463,23 @@ function makeScanlines(scene: Phaser.Scene, key: string): void {
   g.destroy();
 }
 
-/** Soft, feathered contact shadow blob for furniture. */
+/** Smooth radial contact shadow for furniture — soft penumbra, no hard edge. */
 function makeShadow(scene: Phaser.Scene, key: string): void {
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  featherEllipse(g, TILE_W / 2, TILE_H / 2, TILE_W * 0.82, TILE_H * 0.72, 0x16203a, 0.04, 6);
-  g.setScale(ART_SCALE);
-  g.generateTexture(key, TILE_W * ART_SCALE, TILE_H * ART_SCALE);
-  g.destroy();
+  makeCanvasTexture(scene, key, TILE_W, TILE_H, (ctx) => {
+    ctx.save();
+    ctx.translate(TILE_W / 2, TILE_H / 2);
+    ctx.scale(1, (TILE_H * 0.72) / (TILE_W * 0.82)); // flatten the circle to the iso ellipse
+    const r = TILE_W * 0.41;
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    grad.addColorStop(0, 'rgba(18,26,48,0.32)');
+    grad.addColorStop(0.55, 'rgba(18,26,48,0.17)');
+    grad.addColorStop(1, 'rgba(18,26,48,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
 }
 
 export const CHAR_PLAYER = 'char_player';
