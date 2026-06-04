@@ -35,6 +35,28 @@ function diamondPoints(cx = 0, cy = 0, sx = 1, sy = 1): Phaser.Types.Math.Vector
   ];
 }
 
+/**
+ * A soft, feathered ellipse — concentric translucent rings build up density at
+ * the centre and fade to nothing at the edge, so shadows have a believable
+ * penumbra instead of a hard flat blob. Alpha is per-ring; overlap accumulates.
+ */
+function featherEllipse(
+  g: Phaser.GameObjects.Graphics,
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+  color: number,
+  ringAlpha: number,
+  steps = 6,
+): void {
+  for (let i = steps; i >= 1; i--) {
+    const t = i / steps;
+    g.fillStyle(color, ringAlpha);
+    g.fillEllipse(cx, cy, rx * t, ry * t);
+  }
+}
+
 function makeFloor(scene: Phaser.Scene, key: string, fill: number, edge = FLOOR_EDGE): void {
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   g.fillStyle(fill, 1);
@@ -46,6 +68,17 @@ function makeFloor(scene: Phaser.Scene, key: string, fill: number, edge = FLOOR_
       { x: TILE_W / 2, y: 0 },
       { x: TILE_W, y: TILE_H / 2 },
       { x: TILE_W / 2, y: TILE_H / 2 },
+    ],
+    true,
+  );
+  // Soft south shade on the lower half: pairs with the highlight so each tile
+  // reads as gently lit from above rather than flat-filled.
+  g.fillStyle(0x16203a, 0.05);
+  g.fillPoints(
+    [
+      { x: 0, y: TILE_H / 2 },
+      { x: TILE_W, y: TILE_H / 2 },
+      { x: TILE_W / 2, y: TILE_H },
     ],
     true,
   );
@@ -120,6 +153,36 @@ function makeBox(
   g.fillStyle(top, 1);
   g.fillPoints(diamondPoints(), true);
 
+  // Ambient occlusion: a soft dark gradient at the base of the side faces, so the
+  // box reads as grounded on the floor rather than pasted on. A few stacked bands
+  // approximate a smooth falloff.
+  const aoBand = Math.min(h * 0.4, 16);
+  if (aoBand > 1) {
+    const aoSteps = 3;
+    for (let i = 1; i <= aoSteps; i++) {
+      const band = (aoBand * i) / aoSteps;
+      g.fillStyle(0x0d1426, 0.06);
+      g.fillPoints(
+        [
+          { x: 0, y: TILE_H / 2 + h - band },
+          { x: TILE_W / 2, y: TILE_H + h - band },
+          { x: TILE_W / 2, y: TILE_H + h },
+          { x: 0, y: TILE_H / 2 + h },
+        ],
+        true,
+      );
+      g.fillPoints(
+        [
+          { x: TILE_W, y: TILE_H / 2 + h - band },
+          { x: TILE_W / 2, y: TILE_H + h - band },
+          { x: TILE_W / 2, y: TILE_H + h },
+          { x: TILE_W, y: TILE_H / 2 + h },
+        ],
+        true,
+      );
+    }
+  }
+
   if (decorate) decorate(g, h);
 
   g.setScale(ART_SCALE);
@@ -173,9 +236,8 @@ function makeCharacter(
   const hairDark = Phaser.Display.Color.IntegerToColor(accent).darken(14).color;
   const OUT = 0x232a3d; // outline colour
 
-  // Drop shadow.
-  g.fillStyle(0x16203a, 0.22);
-  g.fillEllipse(cx, h - 4, 40, 13);
+  // Soft, feathered contact shadow grounds the character on the floor.
+  featherEllipse(g, cx, h - 4, 46, 16, 0x16203a, 0.05, 6);
 
   // Trousers + legs. `step` swings them fore/aft for a 2-frame walk stride.
   const legDY = step * 2.5;
@@ -316,11 +378,10 @@ function makeScanlines(scene: Phaser.Scene, key: string): void {
   g.destroy();
 }
 
-/** Soft contact shadow blob for furniture. */
+/** Soft, feathered contact shadow blob for furniture. */
 function makeShadow(scene: Phaser.Scene, key: string): void {
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  g.fillStyle(0x16203a, 0.16);
-  g.fillEllipse(TILE_W / 2, TILE_H / 2, TILE_W * 0.7, TILE_H * 0.62);
+  featherEllipse(g, TILE_W / 2, TILE_H / 2, TILE_W * 0.82, TILE_H * 0.72, 0x16203a, 0.04, 6);
   g.setScale(ART_SCALE);
   g.generateTexture(key, TILE_W * ART_SCALE, TILE_H * ART_SCALE);
   g.destroy();
