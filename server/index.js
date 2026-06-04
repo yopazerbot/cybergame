@@ -146,7 +146,7 @@ app.use(express.static(DIST));
 app.get('*', (_req, res) => res.sendFile(path.join(DIST, 'index.html')));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   let writable = false;
   try {
     fs.accessSync(DATA_DIR, fs.constants.W_OK);
@@ -166,3 +166,16 @@ app.listen(PORT, () => {
     );
   }
 });
+
+// Graceful shutdown. Railway sends SIGTERM during deploy swaps / volume attach;
+// without a handler Node exits with code 143, which the platform logs as a crash
+// (and the ON_FAILURE retry is what made the "first deploy fails, second works"
+// pattern). Closing the server and exiting 0 makes that termination clean.
+function shutdown(signal) {
+  console.log(`[server] ${signal} received — shutting down gracefully`);
+  server.close(() => process.exit(0));
+  // Don't hang forever if a connection is slow to drain.
+  setTimeout(() => process.exit(0), 5000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
