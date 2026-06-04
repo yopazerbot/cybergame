@@ -267,8 +267,15 @@ export function StartScreen() {
           </p>
         </div>
 
-        <button className="btn primary big" onClick={start}>
-          ▶ {mode === 'attacker' ? 'Begin the operation' : 'Start the incident'}
+        <button className="btn primary big start-cta" onClick={start}>
+          <span className="start-cta-main">
+            ▶ {mode === 'attacker' ? 'Begin the operation' : 'Start the incident'}
+          </span>
+          <span className="start-cta-sub">
+            {mode === 'attacker'
+              ? 'Stay quiet · grab the data · vanish'
+              : '72-hour clock · contain, notify, recover'}
+          </span>
         </button>
 
         <div className="leaderboard-block">

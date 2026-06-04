@@ -306,6 +306,37 @@ h4 {
   }
 }
 
+/* Primary call-to-action: taller, with a context sub-label and a soft glow. */
+.start-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 13px 26px;
+  margin-top: 4px;
+  box-shadow: 0 8px 22px rgba(45, 108, 223, 0.4);
+}
+.start-cta:hover {
+  box-shadow: 0 12px 30px rgba(45, 108, 223, 0.5);
+}
+html.attacker-mode .start-cta {
+  box-shadow: 0 8px 22px rgba(177, 77, 224, 0.45);
+}
+html.attacker-mode .start-cta:hover {
+  box-shadow: 0 12px 30px rgba(177, 77, 224, 0.6);
+}
+.start-cta-main {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.start-cta-sub {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.82;
+  letter-spacing: 0.01em;
+}
+
 /* Respect reduced-motion: no entrance animation or hover lift. */
 @media (prefers-reduced-motion: reduce) {
   .start-card {
