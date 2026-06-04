@@ -263,6 +263,60 @@ h4 {
   color: var(--brand);
   opacity: 1;
 }
+
+/* Difficulty descriptor: explains what the selected difficulty actually does. */
+.diff-hint {
+  margin-bottom: 4px !important;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Gentle entrance so the menu resolves rather than snapping in. */
+.start-card {
+  animation: start-rise 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes start-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Clear keyboard focus rings on the start-screen controls (a11y). */
+.mode-btn:focus-visible,
+.seg-btn:focus-visible,
+.gh-link:focus-visible,
+.handle-change:focus-visible,
+.btn:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Mobile: keep the top bar tidy — the GitHub mark stays, its label collapses. */
+@media (max-width: 560px) {
+  .gh-link-text {
+    display: none;
+  }
+  .gh-link {
+    padding: 7px;
+  }
+}
+
+/* Respect reduced-motion: no entrance animation or hover lift. */
+@media (prefers-reduced-motion: reduce) {
+  .start-card {
+    animation: none;
+  }
+  .mode-btn:hover,
+  .gh-link:hover,
+  .btn:hover {
+    transform: none;
+  }
+}
 .roles {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

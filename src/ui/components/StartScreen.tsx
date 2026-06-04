@@ -18,6 +18,14 @@ import { Credit } from './Credit';
 
 const DIFFS: Difficulty[] = ['easy', 'normal', 'hard'];
 
+// One-liners explaining what each difficulty actually changes, in terms of the
+// live systems (opening posture, response budget, how fast the attacker escalates).
+const DIFF_BLURB: Record<Difficulty, string> = {
+  easy: 'Stronger opening posture, a generous response budget, and a slower attacker — room to learn the ropes.',
+  normal: 'A balanced starting position and response budget. The attacker speeds up the longer you take.',
+  hard: 'A weak opening, a tight response budget, and an attacker that escalates fast. Every move counts.',
+};
+
 const REPO_URL = 'https://github.com/yopazerbot/cybergame';
 
 // Simple GitHub mark, inheriting the surrounding text colour so it themes with
@@ -251,6 +259,7 @@ export function StartScreen() {
               </div>
             </div>
           </div>
+          <p className="rec-hint diff-hint">{DIFF_BLURB[diff]}</p>
           <p className="rec-hint">
             {rec
               ? 'Dialogs highlight the GDPR-recommended choice. Your score goes on the guided board.'
