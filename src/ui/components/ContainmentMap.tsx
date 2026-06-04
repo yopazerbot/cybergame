@@ -6,6 +6,7 @@ import {
   networkRotateCreds,
   responseBudgetLeft,
   canAfford,
+  threatReadout,
 } from '../../scenario/scoring';
 import { isContained, compromisedCount, ACTION_COST } from '../../scenario/network';
 
@@ -37,6 +38,7 @@ export function ContainmentMap() {
   const contained = isContained(net);
   const selHost = sel ? byId[sel] : null;
   const budget = Math.round(responseBudgetLeft(state));
+  const threat = threatReadout(state);
 
   return (
     <div className="net-dock">
@@ -46,6 +48,14 @@ export function ContainmentMap() {
           <div className={`net-status ${contained ? 'good' : 'bad'}`}>
             {contained ? '✅ Contained' : `🔴 ${compromisedCount(net)}`}
           </div>
+        </div>
+
+        <div className={`net-threat ${threat.tone}`}>
+          <span>Threat</span>
+          <div className="net-threat-bar">
+            <div className={threat.tone} style={{ width: `${threat.pct}%` }} />
+          </div>
+          <strong>{threat.label}</strong>
         </div>
 
         <div className="net-budget">

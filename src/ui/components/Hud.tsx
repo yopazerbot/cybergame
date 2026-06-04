@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../useStore';
 import { Timer } from './Timer';
 import { sfx } from '../../core/sfx';
@@ -25,8 +25,23 @@ function Meter({
   const mid = invert ? value <= 70 : value >= 35;
   const tone = good ? 'good' : mid ? 'mid' : 'bad';
   const shown = format ? format(value) : String(Math.round(value));
+
+  // Flash the meter when it changes, coloured by whether the change was an
+  // improvement (for cost, lower is better — so the direction inverts too).
+  const prev = useRef(value);
+  const [flash, setFlash] = useState<'' | 'good' | 'bad'>('');
+  useEffect(() => {
+    const delta = value - prev.current;
+    if (delta === 0) return;
+    const improved = invert ? delta < 0 : delta > 0;
+    setFlash(improved ? 'good' : 'bad');
+    prev.current = value;
+    const t = setTimeout(() => setFlash(''), 750);
+    return () => clearTimeout(t);
+  }, [value, invert]);
+
   return (
-    <div className={`meter ${tone}`}>
+    <div className={`meter ${tone}${flash ? ` flash-${flash}` : ''}`}>
       <span className="meter-icon">{icon}</span>
       <div className="meter-body">
         <div className="meter-label">{label}</div>

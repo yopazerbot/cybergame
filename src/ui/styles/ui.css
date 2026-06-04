@@ -1640,6 +1640,53 @@ kbd {
 }
 
 /* Spendable response budget — mirrors the exfil bar but reads as a resource. */
+/* Threat readout — surfaces the live escalation pressure (attacker pace). */
+.net-threat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 10px;
+}
+.net-threat-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.net-threat-bar > div {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+.net-threat-bar > div.good {
+  background: var(--good);
+}
+.net-threat-bar > div.mid {
+  background: var(--mid);
+}
+.net-threat-bar > div.bad {
+  background: var(--bad);
+}
+.net-threat strong {
+  color: var(--ink);
+}
+.net-threat.bad strong {
+  color: var(--bad);
+  animation: threat-blink 1.2s ease-in-out infinite;
+}
+@keyframes threat-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
 .net-budget {
   display: flex;
   align-items: center;
@@ -1725,6 +1772,7 @@ kbd {
 }
 .net-node.compromised circle {
   animation: net-throb 1.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 2px rgba(232, 85, 78, 0.95));
 }
 @keyframes net-throb {
   0%,
@@ -1733,6 +1781,22 @@ kbd {
   }
   50% {
     opacity: 0.7;
+  }
+}
+/* The C2 node breathes while it still has a live channel. */
+.net-c2:not(.blocked) circle {
+  animation: net-throb 1.9s ease-in-out infinite;
+}
+
+/* Reduced-motion: calm the live-threat animations. */
+@media (prefers-reduced-motion: reduce) {
+  .net-node.compromised circle,
+  .net-c2:not(.blocked) circle,
+  .net-exfil-line,
+  .net-threat.bad strong,
+  .meter.flash-good,
+  .meter.flash-bad {
+    animation: none;
   }
 }
 .net-node-ico {
@@ -2009,6 +2073,35 @@ kbd {
   display: flex;
   align-items: center;
   gap: 9px;
+  border-radius: 10px;
+}
+/* Brief pulse when a decision moves a meter — green for an improvement, red for
+   a setback (the cost meter's direction is inverted in the component). */
+.meter.flash-good {
+  animation: meter-flash-good 0.75s ease-out;
+}
+.meter.flash-bad {
+  animation: meter-flash-bad 0.75s ease-out;
+}
+@keyframes meter-flash-good {
+  0% {
+    box-shadow: 0 0 0 2px rgba(33, 163, 102, 0.7);
+    background: rgba(33, 163, 102, 0.16);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    background: transparent;
+  }
+}
+@keyframes meter-flash-bad {
+  0% {
+    box-shadow: 0 0 0 2px rgba(232, 85, 78, 0.7);
+    background: rgba(232, 85, 78, 0.16);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    background: transparent;
+  }
 }
 .meter-icon {
   flex: none;
@@ -2246,7 +2339,8 @@ html.attacker-mode kbd {
   padding-top: 0;
 }
 .net-dock .net-exfil,
-.net-dock .net-budget {
+.net-dock .net-budget,
+.net-dock .net-threat {
   font-size: 11px;
   gap: 6px;
   margin-bottom: 8px;

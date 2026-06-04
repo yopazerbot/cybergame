@@ -29,6 +29,7 @@ import {
   blockC2,
   rotateCreds,
   isContained,
+  compromisedCount,
   ACTION_COST,
   type NetworkState,
 } from './network';
@@ -387,6 +388,31 @@ export function threatSpeed(state: GameState): number {
 /** Spendable IR budget left for containment actions (cost-meter headroom). */
 export function responseBudgetLeft(state: GameState): number {
   return Math.max(0, DIFFICULTY[state.difficulty].budget - state.meters.cost);
+}
+
+/**
+ * A legible read on how dangerous the live intrusion is right now — combines the
+ * clock-bite escalation (elapsed time), how many hosts are compromised, and how
+ * much data has leaked. Surfaces the otherwise-invisible "the attacker is
+ * speeding up" pressure in the containment dock.
+ */
+export function threatReadout(state: GameState): {
+  label: string;
+  pct: number;
+  tone: 'good' | 'mid' | 'bad';
+} {
+  const net = state.network;
+  if (isContained(net)) return { label: 'Neutralised', pct: 0, tone: 'good' };
+  const progress = Math.min(1, state.clock.hoursElapsed / state.clock.deadlineHours);
+  const danger = Math.min(
+    1,
+    0.18 + progress * 0.5 + compromisedCount(net) * 0.08 + net.exfilPct / 260,
+  );
+  const pct = Math.round(danger * 100);
+  if (danger < 0.4) return { label: 'Low', pct, tone: 'good' };
+  if (danger < 0.62) return { label: 'Elevated', pct, tone: 'mid' };
+  if (danger < 0.82) return { label: 'High', pct, tone: 'mid' };
+  return { label: 'Critical', pct, tone: 'bad' };
 }
 
 /** Can the player still afford a containment action of this cost? */
