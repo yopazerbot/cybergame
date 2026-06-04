@@ -165,6 +165,104 @@ h4 {
   margin: 0 auto 18px;
   max-width: 540px;
 }
+
+/* ---- start screen: top bar, GitHub link, side picker polish ---- */
+.start-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.gh-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: color 0.15s, border-color 0.15s, transform 0.1s ease, box-shadow 0.15s;
+}
+.gh-link svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+.gh-link:hover {
+  color: var(--ink);
+  border-color: var(--brand);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(24, 38, 74, 0.12);
+}
+.tagline {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.45;
+  margin: 2px auto 18px;
+  max-width: 520px;
+}
+.eyebrow {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.mode-check {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 2px 6px rgba(24, 38, 74, 0.2);
+}
+.mode-btn.villain .mode-check {
+  background: #b14de0;
+}
+.start-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.start-footer .credit {
+  margin-top: 0;
+}
+.gh-link.ghost {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+.gh-link.ghost svg {
+  width: 15px;
+  height: 15px;
+}
+.gh-link.ghost:hover {
+  transform: none;
+  box-shadow: none;
+  color: var(--brand);
+  opacity: 1;
+}
 .roles {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1917,10 +2015,12 @@ kbd {
   margin: 14px 0 16px;
 }
 .mode-btn {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
+  padding-right: 34px;
   border: 2px solid var(--line);
   border-radius: 14px;
   background: var(--paper-2);

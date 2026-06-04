@@ -18,6 +18,21 @@ import { Credit } from './Credit';
 
 const DIFFS: Difficulty[] = ['easy', 'normal', 'hard'];
 
+const REPO_URL = 'https://github.com/yopazerbot/cybergame';
+
+// Simple GitHub mark, inheriting the surrounding text colour so it themes with
+// both the defender (light) and attacker (dark) palettes.
+function GithubMark() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+      />
+    </svg>
+  );
+}
+
 export function StartScreen() {
   const [diff, setDiff] = useState<Difficulty>(getDifficulty());
   const [rec, setRec] = useState<boolean>(getRecommendations());
@@ -54,16 +69,35 @@ export function StartScreen() {
   return (
     <div className="overlay center scroll">
       <div className={`card start-card ${mode}`}>
-        <div className="badge">
-          {mode === 'attacker' ? 'Red-Team Kill Chain' : 'GDPR Incident Simulator'}
+        <div className="start-topbar">
+          <span className="badge">
+            {mode === 'attacker' ? 'Red-Team Kill Chain' : 'GDPR Incident Simulator'}
+          </span>
+          <a
+            className="gh-link"
+            href={REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="View source on GitHub"
+            aria-label="View source on GitHub"
+          >
+            <GithubMark />
+            <span className="gh-link-text">GitHub</span>
+          </a>
         </div>
+
         <h1>
           Breach<span className="accent">!</span>
         </h1>
+        <p className="tagline">
+          See a data breach from both sides — run the response, or run the attack.
+        </p>
 
+        <span className="eyebrow">Choose your side</span>
         <div className="mode-toggle">
           <button
             className={`mode-btn ${mode === 'defender' ? 'active' : ''}`}
+            aria-pressed={mode === 'defender'}
             onClick={() => pickMode('defender')}
           >
             <span className="mode-emoji">🛡️</span>
@@ -71,9 +105,15 @@ export function StartScreen() {
               <strong>Defender</strong>
               <em>Run the GDPR incident response</em>
             </span>
+            {mode === 'defender' && (
+              <span className="mode-check" aria-hidden="true">
+                ✓
+              </span>
+            )}
           </button>
           <button
             className={`mode-btn villain ${mode === 'attacker' ? 'active' : ''}`}
+            aria-pressed={mode === 'attacker'}
             onClick={() => pickMode('attacker')}
           >
             <span className="mode-emoji">🦹</span>
@@ -81,6 +121,11 @@ export function StartScreen() {
               <strong>Attacker</strong>
               <em>Run the breach as the adversary</em>
             </span>
+            {mode === 'attacker' && (
+              <span className="mode-check" aria-hidden="true">
+                ✓
+              </span>
+            )}
           </button>
         </div>
 
@@ -214,7 +259,7 @@ export function StartScreen() {
         </div>
 
         <button className="btn primary big" onClick={start}>
-          ▶ Start the incident
+          ▶ {mode === 'attacker' ? 'Begin the operation' : 'Start the incident'}
         </button>
 
         <div className="leaderboard-block">
@@ -235,7 +280,18 @@ export function StartScreen() {
           </div>
         </div>
 
-        <Credit className="on-card" />
+        <div className="start-footer">
+          <Credit className="on-card" />
+          <a
+            className="gh-link ghost"
+            href={REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <GithubMark />
+            <span>Source on GitHub</span>
+          </a>
+        </div>
       </div>
     </div>
   );
