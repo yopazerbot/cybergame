@@ -87,6 +87,23 @@ export function DebriefScreen() {
           ))}
         </div>
 
+        {state.log.length > 0 && (
+          <>
+            <h3 className="debrief-title">After-action timeline</h3>
+            <ol className="timeline">
+              {state.log.map((l) => (
+                <li className={`timeline-item ${l.tone}`} key={l.id}>
+                  <span className="timeline-hour">{l.hour}h</span>
+                  <span className="timeline-dot" aria-hidden="true">
+                    {l.icon}
+                  </span>
+                  <span className="timeline-text">{l.text}</span>
+                </li>
+              ))}
+            </ol>
+          </>
+        )}
+
         <h3 className="debrief-title">
           Achievements{' '}
           <span className="ach-count">

@@ -1,4 +1,4 @@
-import type { GameState, Mode, Phase, Role, Ending } from '../core/types';
+import type { GameState, Mode, Phase, Role, Ending, LogEntry } from '../core/types';
 import {
   SCORE,
   GRADE_BANDS,
@@ -38,6 +38,12 @@ import {
 
 const clamp = (v: number) => Math.max(0, Math.min(100, v));
 const phaseIdx = (p: Phase, mode: Mode) => campaignPhaseOrder(mode).indexOf(p);
+
+// After-action timeline: monotonically-ID'd turning-point entries.
+let logSeq = 0;
+function mkLog(hour: number, icon: string, text: string, tone: LogEntry['tone']): LogEntry {
+  return { id: `l${logSeq++}`, hour: Math.round(hour), icon, text, tone };
+}
 
 function flagsSatisfied(state: GameState, required?: string[]): boolean {
   return !required || required.every((f) => state.flags[f]);
@@ -312,6 +318,17 @@ export function resolveChoice(nodeId: string, choiceId: string): void {
 
   // Audio + toast feedback on the choice quality.
   const net = (e.compliance ?? 0) + (e.reputation ?? 0);
+
+  // Record the decision (and any phase change) on the after-action timeline.
+  const decisionTone: LogEntry['tone'] = net >= 0 ? 'good' : 'bad';
+  const entries = [
+    mkLog(next.clock.hoursElapsed, net >= 0 ? '✅' : '⚠️', choice.label, decisionTone),
+  ];
+  if (phaseAdvanced) {
+    entries.push(mkLog(next.clock.hoursElapsed, '🔻', `Phase: ${capitalize(phase)}`, 'info'));
+  }
+  next.log = [...state.log, ...entries];
+
   if (net >= 0) sfx.good();
   else sfx.bad();
   emitChoiceToast(e);
@@ -424,11 +441,13 @@ export function canAfford(state: GameState, cost: number): boolean {
 function applyNetworkTransitions(prev: GameState, next: GameState): GameState {
   const meters = { ...next.meters };
   const flags = { ...next.flags };
+  const log = [...next.log];
 
   if (!isContained(prev.network) && isContained(next.network) && !flags.networkContained) {
     flags.networkContained = true;
     flags.breachContained = true;
     meters.compliance = clamp(meters.compliance + 6);
+    log.push(mkLog(next.clock.hoursElapsed, '🛡️', 'Network contained — intrusion stopped', 'good'));
     eventBus.emit('notify', { text: 'Network contained — the intrusion is stopped', tone: 'good' });
     sfx.good();
   }
@@ -436,11 +455,12 @@ function applyNetworkTransitions(prev: GameState, next: GameState): GameState {
     flags.majorExfil = true;
     meters.compliance = clamp(meters.compliance - 8);
     meters.reputation = clamp(meters.reputation - 5);
+    log.push(mkLog(next.clock.hoursElapsed, '📤', 'Major data exfiltration', 'bad'));
     eventBus.emit('notify', { text: 'Major data exfiltration in progress!', tone: 'bad' });
     sfx.bad();
   }
 
-  return { ...next, meters, flags };
+  return { ...next, meters, flags, log };
 }
 
 function commitNetwork(net: NetworkState, spec: { hours: number; cost: number }): void {
@@ -522,6 +542,11 @@ export function resolveInject(injectId: string, choiceId: string): void {
   next.score = computeScore(next);
 
   const netGood = (e.compliance ?? 0) + (e.reputation ?? 0) >= 0;
+  // Crises (incl. consequence chains) are the dramatic beats — log them.
+  next.log = [
+    ...state.log,
+    mkLog(next.clock.hoursElapsed, inject.icon, `${inject.heading} → ${choice.label}`, netGood ? 'good' : 'bad'),
+  ];
   if (netGood) sfx.good();
   else sfx.bad();
   emitChoiceToast(e);

@@ -2494,6 +2494,55 @@ html.attacker-mode kbd {
   color: var(--ink);
   text-align: right;
 }
+
+/* After-action timeline — the run's turning points, in order. */
+.timeline {
+  list-style: none;
+  margin: 12px 0 4px;
+  padding: 0;
+}
+.timeline-item {
+  display: grid;
+  grid-template-columns: 40px 26px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  position: relative;
+  font-size: 13px;
+  color: var(--ink);
+  border-left: 2px solid var(--line);
+  margin-left: 6px;
+}
+.timeline-item.good {
+  border-left-color: var(--good);
+}
+.timeline-item.bad {
+  border-left-color: var(--bad);
+}
+.timeline-item.info {
+  border-left-color: var(--brand);
+}
+.timeline-hour {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-align: right;
+}
+.timeline-dot {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  font-size: 14px;
+}
+.timeline-text {
+  line-height: 1.3;
+}
 .pts-grade {
   color: var(--ink-soft);
   font-weight: 800;

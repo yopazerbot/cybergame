@@ -45,6 +45,16 @@ export interface Objective {
   done: boolean;
 }
 
+/** A recorded turning point for the after-action timeline on the debrief. */
+export interface LogEntry {
+  id: string;
+  /** Game-hour the event happened at. */
+  hour: number;
+  icon: string;
+  text: string;
+  tone: 'good' | 'bad' | 'info';
+}
+
 export type EndingId =
   | 'exemplary'
   | 'compliant_costly'
@@ -83,6 +93,8 @@ export interface GameState {
   activeInject: { id: string } | null;
   /** Injects that have already fired (each fires at most once). */
   firedInjects: string[];
+  /** Chronological record of turning points, shown as the debrief timeline. */
+  log: LogEntry[];
   /** Live containment-map state (intrusion spread + exfiltration). */
   network: NetworkState;
   objectives: Objective[];

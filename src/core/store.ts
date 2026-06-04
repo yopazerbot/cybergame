@@ -35,6 +35,7 @@ function initialState(
     activeDialogue: null,
     activeInject: null,
     firedInjects: [],
+    log: [],
     network: initialNetwork(),
     objectives: [],
     npcInRange: null,
