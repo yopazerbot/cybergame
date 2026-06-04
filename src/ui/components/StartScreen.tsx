@@ -278,6 +278,9 @@ export function StartScreen() {
           </span>
         </button>
 
+          </div>
+        </div>
+
         <div className="leaderboard-block">
           <h3 className="section-title">
             🏆 {mode === 'attacker' ? 'Attacker' : 'Defender'} leaderboards
@@ -290,8 +293,6 @@ export function StartScreen() {
             <div className="board-col">
               <h4>🤝 Guided · recommendations</h4>
               <Scoreboard rec="with" campaign={mode} limit={6} />
-            </div>
-          </div>
             </div>
           </div>
         </div>

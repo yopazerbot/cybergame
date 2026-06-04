@@ -337,6 +337,14 @@ html.attacker-mode .start-cta:hover {
   letter-spacing: 0.01em;
 }
 
+/* Full-width leaderboard section sits below the two-column grid — give it a
+   divider so it reads as its own block (scoped so the debrief is untouched). */
+.start-card .leaderboard-block {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
 /* Respect reduced-motion: no entrance animation or hover lift. */
 @media (prefers-reduced-motion: reduce) {
   .start-card {
