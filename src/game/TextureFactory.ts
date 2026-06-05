@@ -17,12 +17,13 @@ export function addArt(
   return scene.add.image(x, y, key).setScale(ART_INV);
 }
 
-const FLOOR_A = 0xeef2fb;
-const FLOOR_B = 0xe2e8f6;
-const FLOOR_EDGE = 0xcdd8ee;
-const WALL_TOP = 0xc6d0e4;
-const WALL_LEFT = 0x9aa7c4;
-const WALL_RIGHT = 0x7e8cae;
+// RuneScape-style world palette: grassy green ground and warm sandstone walls.
+const FLOOR_A = 0x6f9e4a; // grass
+const FLOOR_B = 0x648f43; // grass (checker)
+const FLOOR_EDGE = 0x3f5e2a; // dark turf grout
+const WALL_TOP = 0xcabf98; // sandstone top
+const WALL_LEFT = 0xa89a70; // sandstone (lit face)
+const WALL_RIGHT = 0x8a7c58; // sandstone (shaded face)
 const WALL_WINDOW = 0xbfe3f5;
 
 function diamondPoints(cx = 0, cy = 0, sx = 1, sy = 1): Phaser.Types.Math.Vector2Like[] {
@@ -332,17 +333,18 @@ function drawWindowSkyline(g: Phaser.GameObjects.Graphics, face: 'left' | 'right
   // Low sun with a soft halo.
   faceDot(g, face, 0.66, 19.5, 4.2, 0xfff0bf, 0.5);
   faceDot(g, face, 0.66, 19.5, 2.1, 0xfff7d8, 1);
-  // Building silhouettes (two depth shades) standing on the horizon (~30.5).
-  const far = 0x3a5d86;
-  const near = 0x27445f;
+  // Medieval town silhouette (two depth shades of stone) on the horizon (~30.5),
+  // with a tall castle tower at the centre.
+  const far = 0x6f6a58;
+  const near = 0x524d3e;
   const blds: [number, number, number][] = [
     [0.24, 0.3, 25],
-    [0.3, 0.35, 21],
+    [0.3, 0.35, 22],
     [0.36, 0.43, 26],
-    [0.45, 0.52, 18],
-    [0.52, 0.59, 23],
+    [0.45, 0.52, 17], // castle tower
+    [0.52, 0.59, 24],
     [0.6, 0.68, 25],
-    [0.69, 0.77, 22],
+    [0.69, 0.77, 23],
   ];
   blds.forEach((b, i) => facePatch(g, face, b[0], b[1], b[2], 30.5, i % 2 ? near : far, 1));
   // A scatter of warm lit windows on the taller buildings.
@@ -554,7 +556,7 @@ export const TEX_SCAN = 'scanlines';
 export function generateTextures(scene: Phaser.Scene): void {
   makeFloor(scene, 'floor_a', FLOOR_A);
   makeFloor(scene, 'floor_b', FLOOR_B);
-  makeFloor(scene, 'floor_accent', 0xcfeae0);
+  makeFloor(scene, 'floor_accent', 0xb59a63); // dirt path
   makeDiamond(scene, TEX_RUG);
   makeDiamond(scene, TEX_RING, true);
   makeTileHighlight(scene, TEX_TILE_HI);

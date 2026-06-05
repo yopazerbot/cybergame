@@ -607,7 +607,7 @@ export class OfficeScene extends Phaser.Scene {
   /** Recolour the world for the blue-team office vs the red-team lair. */
   private applyTheme(mode: Mode): void {
     const attacker = mode === 'attacker';
-    this.cameras.main.setBackgroundColor(attacker ? '#0b0717' : '#aab4d2');
+    this.cameras.main.setBackgroundColor(attacker ? '#0b0717' : '#7d8c5e');
     this.darkOverlay?.setVisible(attacker);
     this.scanlines?.setVisible(attacker).setAlpha(attacker ? 0.12 : 0);
     this.glow?.setTint(attacker ? 0xff3b6b : 0xffe9c2).setAlpha(attacker ? 0.14 : 0.09);
