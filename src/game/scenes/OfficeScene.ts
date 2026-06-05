@@ -202,7 +202,8 @@ export class OfficeScene extends Phaser.Scene {
       for (let gy = 0; gy < GRID_SIZE; gy++) {
         if (this.isWall(gx, gy)) continue;
         const { x, y } = this.toWorld(gx, gy);
-        const key = (gx + gy) % 2 === 0 ? 'floor_a' : 'floor_b';
+        const variants = ['floor_a', 'floor_b', 'floor_c', 'floor_d'];
+        const key = variants[(gx * 7 + gy * 13) % variants.length];
         const tile = addArt(this, x, y, key).setOrigin(0.5, 0.5).setDepth(isoDepth(gx, gy, -2));
         const tint = zoneTint(gx, gy);
         if (tint !== null) tile.setTint(tint);

@@ -20,7 +20,6 @@ export function addArt(
 // RuneScape-style world palette: grassy green ground and warm sandstone walls.
 const FLOOR_A = 0x6f9e4a; // grass
 const FLOOR_B = 0x648f43; // grass (checker)
-const FLOOR_EDGE = 0x3f5e2a; // dark turf grout
 const WALL_TOP = 0xcabf98; // sandstone top
 const WALL_LEFT = 0xa89a70; // sandstone (lit face)
 const WALL_RIGHT = 0x8a7c58; // sandstone (shaded face)
@@ -90,6 +89,14 @@ function shadeCss(c: number, pct: number): string {
   return toCss(col.color);
 }
 
+/** Like shadeCss but returns an rgba() string at alpha `a` (for soft blending). */
+function shadeRgba(c: number, pct: number, a: number): string {
+  const col = Phaser.Display.Color.IntegerToColor(c);
+  if (pct >= 0) col.lighten(pct);
+  else col.darken(-pct);
+  return `rgba(${col.red},${col.green},${col.blue},${a})`;
+}
+
 function floorDiamondPath(ctx: CanvasRenderingContext2D, inset = 0): void {
   const i = inset;
   ctx.beginPath();
@@ -100,55 +107,51 @@ function floorDiamondPath(ctx: CanvasRenderingContext2D, inset = 0): void {
   ctx.closePath();
 }
 
-function makeFloor(scene: Phaser.Scene, key: string, fill: number, edge = FLOOR_EDGE): void {
+/**
+ * Organic terrain tile (grass / dirt) — RuneScape-style. No grout lines or
+ * beveled rim (those read as an indoor tiled floor); instead a near-flat base
+ * with mottled patches, fine grain and scattered blades, so neighbouring tiles
+ * blend into a continuous, natural ground rather than a grid.
+ */
+function makeFloor(scene: Phaser.Scene, key: string, fill: number): void {
   makeCanvasTexture(scene, key, TILE_W, TILE_H, (ctx) => {
     ctx.save();
     floorDiamondPath(ctx);
     ctx.clip();
 
-    // Directional base gradient: lit from the top-left, falling into shadow at
-    // the bottom-right — a real gradient, not a flat fill.
-    const base = ctx.createLinearGradient(0, 0, TILE_W, TILE_H);
-    base.addColorStop(0, shadeCss(fill, 9));
-    base.addColorStop(0.5, shadeCss(fill, 0));
-    base.addColorStop(1, shadeCss(fill, -13));
+    // Near-flat base with only a whisper of top-down lighting.
+    const base = ctx.createLinearGradient(0, 0, 0, TILE_H);
+    base.addColorStop(0, shadeCss(fill, 5));
+    base.addColorStop(1, shadeCss(fill, -7));
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, TILE_W, TILE_H);
 
-    // Soft specular pool near the light source.
-    const hi = ctx.createRadialGradient(
-      TILE_W * 0.4,
-      TILE_H * 0.3,
-      1,
-      TILE_W * 0.4,
-      TILE_H * 0.3,
-      TILE_W * 0.62,
-    );
-    hi.addColorStop(0, 'rgba(255,255,255,0.22)');
-    hi.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = hi;
-    ctx.fillRect(0, 0, TILE_W, TILE_H);
+    // Mottled patches — soft blobs of lighter/darker ground.
+    for (let i = 0; i < 12; i++) {
+      const bx = Math.random() * TILE_W;
+      const by = Math.random() * TILE_H;
+      const r = 4 + Math.random() * 9;
+      const lighten = Math.random() > 0.5;
+      const pct = lighten ? 8 + Math.random() * 9 : -(9 + Math.random() * 11);
+      const blob = ctx.createRadialGradient(bx, by, 0, bx, by, r);
+      blob.addColorStop(0, shadeRgba(fill, pct, 0.5));
+      blob.addColorStop(1, shadeRgba(fill, pct, 0));
+      ctx.fillStyle = blob;
+      ctx.fillRect(0, 0, TILE_W, TILE_H);
+    }
 
-    // Fine material grain so the surface isn't a perfectly flat plane.
-    for (let i = 0; i < 26; i++) {
-      ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.05)' : 'rgba(18,26,48,0.05)';
+    // Fine grain.
+    for (let i = 0; i < 70; i++) {
+      ctx.fillStyle = shadeRgba(fill, Math.random() > 0.5 ? 16 : -18, 0.18);
       ctx.fillRect(Math.random() * TILE_W, Math.random() * TILE_H, 1, 1);
     }
+
+    // A few short blades catching/giving light.
+    for (let i = 0; i < 14; i++) {
+      ctx.fillStyle = shadeRgba(fill, Math.random() > 0.5 ? 24 : -22, 0.5);
+      ctx.fillRect(Math.random() * TILE_W, Math.random() * TILE_H, 0.7, 2);
+    }
     ctx.restore();
-
-    // Inset bevel highlight just inside the grout.
-    ctx.strokeStyle = 'rgba(255,255,255,0.30)';
-    ctx.lineWidth = 1;
-    floorDiamondPath(ctx, 2.5);
-    ctx.stroke();
-
-    // Grout edge.
-    ctx.strokeStyle = toCss(edge);
-    ctx.globalAlpha = 0.9;
-    ctx.lineWidth = 1;
-    floorDiamondPath(ctx);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
   });
 }
 
@@ -554,8 +557,12 @@ export const TEX_GLOW = 'glow';
 export const TEX_SCAN = 'scanlines';
 
 export function generateTextures(scene: Phaser.Scene): void {
+  // Four grass variants (chosen per-tile by position) so the ground reads as a
+  // continuous organic field instead of a repeating checker.
   makeFloor(scene, 'floor_a', FLOOR_A);
   makeFloor(scene, 'floor_b', FLOOR_B);
+  makeFloor(scene, 'floor_c', 0x6b9846);
+  makeFloor(scene, 'floor_d', 0x5e8940);
   makeFloor(scene, 'floor_accent', 0xb59a63); // dirt path
   makeDiamond(scene, TEX_RUG);
   makeDiamond(scene, TEX_RING, true);
