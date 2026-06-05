@@ -300,6 +300,63 @@ function facePatch(
   );
 }
 
+/** A small filled circle placed at a point on a wall side face. */
+function faceDot(
+  g: Phaser.GameObjects.Graphics,
+  face: 'left' | 'right',
+  u: number,
+  v: number,
+  r: number,
+  color: number,
+  alpha = 1,
+): void {
+  const p = facePt(face, u, v);
+  g.fillStyle(color, alpha);
+  g.fillCircle(p.x as number, p.y as number, r);
+}
+
+/**
+ * Paint a city skyline inside a window pane on one wall face: a banded sky, a
+ * low sun with halo, layered building silhouettes on the horizon and a scatter
+ * of lit windows — so there's a believable world outside the office. Drawn on
+ * the slanted face, the buildings recede correctly with the wall.
+ */
+function drawWindowSkyline(g: Phaser.GameObjects.Graphics, face: 'left' | 'right'): void {
+  const uL = 0.22;
+  const uR = 0.78;
+  // Sky, top → horizon.
+  facePatch(g, face, uL, uR, 15, 20, 0x35608f, 1);
+  facePatch(g, face, uL, uR, 20, 25, 0x5f93c4, 1);
+  facePatch(g, face, uL, uR, 25, 30, 0xa9cfe6, 1); // horizon haze
+  facePatch(g, face, uL, uR, 30, 37, 0x16293f, 1); // ground / foreground
+  // Low sun with a soft halo.
+  faceDot(g, face, 0.66, 19.5, 4.2, 0xfff0bf, 0.5);
+  faceDot(g, face, 0.66, 19.5, 2.1, 0xfff7d8, 1);
+  // Building silhouettes (two depth shades) standing on the horizon (~30.5).
+  const far = 0x3a5d86;
+  const near = 0x27445f;
+  const blds: [number, number, number][] = [
+    [0.24, 0.3, 25],
+    [0.3, 0.35, 21],
+    [0.36, 0.43, 26],
+    [0.45, 0.52, 18],
+    [0.52, 0.59, 23],
+    [0.6, 0.68, 25],
+    [0.69, 0.77, 22],
+  ];
+  blds.forEach((b, i) => facePatch(g, face, b[0], b[1], b[2], 30.5, i % 2 ? near : far, 1));
+  // A scatter of warm lit windows on the taller buildings.
+  const lit: [number, number][] = [
+    [0.47, 21],
+    [0.49, 23.5],
+    [0.32, 24],
+    [0.63, 27],
+    [0.4, 28],
+    [0.55, 26],
+  ];
+  lit.forEach(([u, v]) => faceDot(g, face, u, v, 0.55, 0xffe49a, 0.9));
+}
+
 /** A taller, Habbo-style avatar: dark outline, big head, shaded torso, legs + shoes, face. */
 function makeCharacter(
   scene: Phaser.Scene,
@@ -533,14 +590,18 @@ export function generateTextures(scene: Phaser.Scene): void {
       true,
     );
   });
-  // Window wall: a big sky pane with mullions on each visible face.
+  // Window wall: a city skyline behind mullioned glass on each visible face.
   makeBox(scene, 'wall_window', 54, WALL_TOP, WALL_LEFT, WALL_RIGHT, (g) => {
     for (const face of ['left', 'right'] as const) {
       facePatch(g, face, 0.16, 0.84, 12, 40, 0x2a3550, 1); // frame
-      facePatch(g, face, 0.22, 0.78, 15, 37, WALL_WINDOW, 1); // pane
-      facePatch(g, face, 0.22, 0.5, 15, 26, 0xffffff, 0.28); // sky sheen
-      facePatch(g, face, 0.49, 0.51, 15, 37, 0x2a3550, 1); // vertical mullion
-      facePatch(g, face, 0.22, 0.78, 25, 26.6, 0x2a3550, 1); // horizontal mullion
+      facePatch(g, face, 0.22, 0.78, 15, 37, 0x16293f, 1); // pane backing
+      drawWindowSkyline(g, face); // the world outside
+      facePatch(g, face, 0.22, 0.78, 15, 26, 0xffffff, 0.12); // glass sheen
+      // Mullions divide the glass into a realistic multi-pane window.
+      facePatch(g, face, 0.345, 0.36, 15, 37, 0x2a3550, 1);
+      facePatch(g, face, 0.49, 0.51, 15, 37, 0x2a3550, 1);
+      facePatch(g, face, 0.64, 0.655, 15, 37, 0x2a3550, 1);
+      facePatch(g, face, 0.22, 0.78, 24.7, 25.4, 0x2a3550, 1); // horizontal mullion
     }
   });
   // Picture wall: a framed abstract on each face.

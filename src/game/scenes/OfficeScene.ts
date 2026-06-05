@@ -394,6 +394,23 @@ export class OfficeScene extends Phaser.Scene {
       ease: 'Sine.inOut',
       delay: Phaser.Math.Between(0, 2000),
     });
+    // A warm pool of sunlight spilling in from the skyline outside.
+    const sun = this.add
+      .image(x + 6, y + 3, TEX_GLOW)
+      .setTint(0xffe6b4)
+      .setAlpha(0.09)
+      .setScale(0.6, 0.38)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(isoDepth(gx, gy, -1));
+    this.tweens.add({
+      targets: sun,
+      alpha: { from: 0.06, to: 0.14 },
+      duration: 3000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+      delay: Phaser.Math.Between(0, 1800),
+    });
   }
 
   /** Blinking status LEDs on a server rack so it reads as alive. */
