@@ -92,8 +92,10 @@ export class OfficeScene extends Phaser.Scene {
   private npcTiles = new Set<string>();
   private marker!: Phaser.GameObjects.Image;
   private hover!: Phaser.GameObjects.Image;
-  private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
-  private wasd?: Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key>;
+  // Physical-key tracker (KeyboardEvent.code) so movement is keyboard-layout
+  // independent: the same key positions drive it on QWERTY (WASD), AZERTY (ZQSD),
+  // QWERTZ, etc., because `code` reports the position, not the printed letter.
+  private heldCodes = new Set<string>();
   private dragging = false;
   private downAt = { x: 0, y: 0 };
   private panLast = { x: 0, y: 0 };
@@ -742,15 +744,20 @@ export class OfficeScene extends Phaser.Scene {
       }
     });
 
-    // Arrow keys + WASD walk the avatar one tile in a screen direction.
-    this.cursors = this.input.keyboard?.createCursorKeys();
-    this.wasd = this.input.keyboard?.addKeys(
-      { up: Phaser.Input.Keyboard.KeyCodes.W,
-        down: Phaser.Input.Keyboard.KeyCodes.S,
-        left: Phaser.Input.Keyboard.KeyCodes.A,
-        right: Phaser.Input.Keyboard.KeyCodes.D },
-      false,
-    ) as Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key>;
+    // Movement keys tracked by physical position (layout-independent). The WASD
+    // cluster — KeyW/KeyA/KeyS/KeyD — is the same set of physical keys an AZERTY
+    // user knows as ZQSD, so both work without special-casing the layout.
+    const onCodeDown = (e: KeyboardEvent) => this.heldCodes.add(e.code);
+    const onCodeUp = (e: KeyboardEvent) => this.heldCodes.delete(e.code);
+    const onBlur = () => this.heldCodes.clear();
+    window.addEventListener('keydown', onCodeDown);
+    window.addEventListener('keyup', onCodeUp);
+    window.addEventListener('blur', onBlur);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      window.removeEventListener('keydown', onCodeDown);
+      window.removeEventListener('keyup', onCodeUp);
+      window.removeEventListener('blur', onBlur);
+    });
   }
 
   // A genuine tap (not a drag-pan): walk there, or talk to an adjacent NPC.
@@ -793,23 +800,25 @@ export class OfficeScene extends Phaser.Scene {
   // space). Holding a key keeps stepping once the previous tile tween finishes.
   private tryKeyboardMove(): void {
     if (this.player.moving) return;
-    const c = this.cursors;
-    const w = this.wasd;
-    // Arrow keys and WASD are equivalent; either direction steps one iso tile.
-    const held = (dir: 'up' | 'down' | 'left' | 'right') =>
-      Boolean(c?.[dir].isDown) || Boolean(w?.[dir].isDown);
+    const h = this.heldCodes;
+    // Arrow keys and the physical WASD/ZQSD cluster are equivalent; either steps
+    // one iso tile in a screen direction.
+    const up = h.has('ArrowUp') || h.has('KeyW');
+    const down = h.has('ArrowDown') || h.has('KeyS');
+    const left = h.has('ArrowLeft') || h.has('KeyA');
+    const right = h.has('ArrowRight') || h.has('KeyD');
     let dgx = 0;
     let dgy = 0;
-    if (held('up')) {
+    if (up) {
       dgx = -1;
       dgy = -1;
-    } else if (held('down')) {
+    } else if (down) {
       dgx = 1;
       dgy = 1;
-    } else if (held('left')) {
+    } else if (left) {
       dgx = -1;
       dgy = 1;
-    } else if (held('right')) {
+    } else if (right) {
       dgx = 1;
       dgy = -1;
     } else {

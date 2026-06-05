@@ -3,7 +3,7 @@ export function ControlsLegend() {
   return (
     <div className="controls-legend">
       <span className="legend-desktop">
-        <kbd>🖱️</kbd> Click floor · <kbd>WASD</kbd> / <kbd>↑↓←→</kbd> to walk
+        <kbd>🖱️</kbd> Click floor · <kbd>ZQSD</kbd>/<kbd>WASD</kbd> / <kbd>↑↓←→</kbd> to walk
       </span>
       <span className="legend-desktop">
         <kbd>Space</kbd> / click a colleague to talk · <kbd>1</kbd>–<kbd>3</kbd> pick a reply
