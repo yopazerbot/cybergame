@@ -202,8 +202,7 @@ export class OfficeScene extends Phaser.Scene {
       for (let gy = 0; gy < GRID_SIZE; gy++) {
         if (this.isWall(gx, gy)) continue;
         const { x, y } = this.toWorld(gx, gy);
-        const variants = ['floor_a', 'floor_b', 'floor_c', 'floor_d'];
-        const key = variants[(gx * 7 + gy * 13) % variants.length];
+        const key = (gx + gy) % 2 === 0 ? 'floor_a' : 'floor_b';
         const tile = addArt(this, x, y, key).setOrigin(0.5, 0.5).setDepth(isoDepth(gx, gy, -2));
         const tint = zoneTint(gx, gy);
         if (tint !== null) tile.setTint(tint);
@@ -608,7 +607,7 @@ export class OfficeScene extends Phaser.Scene {
   /** Recolour the world for the blue-team office vs the red-team lair. */
   private applyTheme(mode: Mode): void {
     const attacker = mode === 'attacker';
-    this.cameras.main.setBackgroundColor(attacker ? '#0b0717' : '#7d8c5e');
+    this.cameras.main.setBackgroundColor(attacker ? '#0b0717' : '#aab4d2');
     this.darkOverlay?.setVisible(attacker);
     this.scanlines?.setVisible(attacker).setAlpha(attacker ? 0.12 : 0);
     this.glow?.setTint(attacker ? 0xff3b6b : 0xffe9c2).setAlpha(attacker ? 0.14 : 0.09);

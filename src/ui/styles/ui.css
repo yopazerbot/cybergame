@@ -2583,108 +2583,13 @@ html.attacker-mode kbd {
   }
 }
 
-/* =====================================================================
-   RuneScape-inspired skin — parchment + carved-stone bevels + gold
-   medieval lettering + wood buttons. Scoped to everything EXCEPT the
-   red-team mode, which keeps its dark "hacker" identity.
-   ===================================================================== */
-html:not(.attacker-mode) {
-  --ink: #2a1d09;
-  --ink-soft: #5e4a29;
-  --paper: #efe1bd;
-  --paper-2: #ddc795;
-  --line: #7a5a2c;
-  --brand: #7a5320;
-  --brand-dk: #553611;
-  --good: #2f7d2e;
-  --mid: #c0891d;
-  --bad: #9c2b1c;
-  --shadow: 0 12px 34px rgba(18, 10, 0, 0.55);
-  --radius: 8px;
-  --rs-gold: #ffd87a;
-  --rs-wood-dk: #38260f;
-  --rs-edge-hi: #c2a05f;
+/* In-game high-scores popup (opened from the HUD). */
+.highscore-modal {
+  position: relative;
+  width: min(720px, 94vw);
+  max-height: 88vh;
+  overflow: auto;
 }
-
-html:not(.attacker-mode) body {
-  background: radial-gradient(circle at 50% 26%, #5b4a30 0%, #3a2c19 52%, #241a0e 100%);
-}
-
-/* Parchment panels with a carved double bevel (gold inner + dark wood outer). */
-html:not(.attacker-mode) .card {
-  background: linear-gradient(180deg, #f2e6c6 0%, #e2cd9c 100%);
-  border: 2px solid var(--rs-wood-dk);
-  box-shadow:
-    inset 0 0 0 2px var(--rs-edge-hi),
-    inset 0 0 0 3px var(--rs-wood-dk),
-    var(--shadow);
-}
-
-/* Medieval gold lettering for headings + key chrome. */
-html:not(.attacker-mode) h1,
-html:not(.attacker-mode) h2,
-html:not(.attacker-mode) h3,
-html:not(.attacker-mode) h4,
-html:not(.attacker-mode) .section-title,
-html:not(.attacker-mode) .badge,
-html:not(.attacker-mode) .net-title,
-html:not(.attacker-mode) .dialogue-name,
-html:not(.attacker-mode) .ending-banner h2 {
-  font-family: 'Cinzel', 'Baloo 2', serif;
-  letter-spacing: 0.01em;
-}
-html:not(.attacker-mode) h1,
-html:not(.attacker-mode) h2,
-html:not(.attacker-mode) h3 {
-  color: #4a3413;
-}
-html:not(.attacker-mode) .start-card h1 {
-  color: var(--rs-gold);
-  text-shadow: 0 2px 0 var(--rs-wood-dk), 0 0 12px rgba(255, 180, 60, 0.4);
-}
-
-/* Wood/stone buttons with a bevel and gold text; primary = RuneScape green. */
-html:not(.attacker-mode) .btn {
-  background: linear-gradient(180deg, #7c5829 0%, #5c3f1c 100%);
-  color: #ffe9b8;
-  border: 2px solid var(--rs-wood-dk);
-  box-shadow: inset 0 1px 0 rgba(168, 129, 65, 0.6), 0 2px 0 rgba(0, 0, 0, 0.45);
-  border-radius: 6px;
-}
-html:not(.attacker-mode) .btn:hover {
-  background: linear-gradient(180deg, #8d6831 0%, #6b4a22 100%);
-}
-html:not(.attacker-mode) .btn.primary {
-  background: linear-gradient(180deg, #3f8a32 0%, #2c6322 100%);
-  border-color: #173d12;
-  color: #fffbe6;
-}
-html:not(.attacker-mode) .btn.primary:hover {
-  background: linear-gradient(180deg, #49a03a 0%, #357528 100%);
-}
-
-/* HUD / stat plates as parchment panels. */
-html:not(.attacker-mode) .hud > * {
-  background: linear-gradient(180deg, #ecdcb6 0%, #d8c190 100%);
-  border: 2px solid var(--rs-wood-dk);
-  box-shadow: inset 0 0 0 1px var(--rs-edge-hi), var(--shadow);
-}
-
-/* Stat numbers in burnished gold-brown. */
-html:not(.attacker-mode) .score-val,
-html:not(.attacker-mode) .big-score strong,
-html:not(.attacker-mode) .pts {
-  color: #7a4f12;
-}
-
-/* Gold-plate badge + dark-wood key caps. */
-html:not(.attacker-mode) .badge {
-  background: linear-gradient(180deg, #7c5829, #5c3f1c);
-  color: var(--rs-gold);
-  border: 1px solid var(--rs-wood-dk);
-}
-html:not(.attacker-mode) kbd {
-  background: var(--rs-wood-dk);
-  color: #ffe9b8;
-  border: 1px solid #1c1206;
+.highscore-modal .section-title {
+  margin: 0 30px 14px 0;
 }

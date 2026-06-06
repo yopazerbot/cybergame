@@ -56,7 +56,7 @@ function Meter({
   );
 }
 
-export function Hud() {
+export function Hud({ onShowHighscores }: { onShowHighscores: () => void }) {
   const state = useStore();
   const [muted, setMuted] = useState(sfx.isMuted());
   const phaseLabel = state.phase.charAt(0).toUpperCase() + state.phase.slice(1);
@@ -89,6 +89,7 @@ export function Hud() {
       else if (e.key === '+' || e.key === '=') eventBus.emit('zoom', { dir: 'in' });
       else if (e.key === '-' || e.key === '_') eventBus.emit('zoom', { dir: 'out' });
       else if (e.key === '0') eventBus.emit('zoom', { dir: 'reset' });
+      else if (e.key === 'h' || e.key === 'H') onShowHighscores();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -126,6 +127,14 @@ export function Hud() {
           <span className="score-cap">/100 · {gradeFor(state.score)}</span>
         </div>
         <div className="hud-buttons">
+          <button
+            className="mute-btn"
+            onClick={onShowHighscores}
+            title="High scores (H)"
+            aria-label="Show high scores"
+          >
+            🏆
+          </button>
           <button className="mute-btn" onClick={restart} title="Restart game (R)" aria-label="Restart game">
             🔄
           </button>

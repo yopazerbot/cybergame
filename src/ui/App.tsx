@@ -14,10 +14,12 @@ import { ControlsLegend } from './components/ControlsLegend';
 import { Tutorial } from './components/Tutorial';
 import { ContainmentMap } from './components/ContainmentMap';
 import { ZoomControls } from './components/ZoomControls';
+import { HighscoreModal } from './components/HighscoreModal';
 
 export function App() {
   const state = useStore();
   const [name, setName] = useState(getUsername());
+  const [showHighscores, setShowHighscores] = useState(false);
 
   if (!name) {
     return (
@@ -33,7 +35,7 @@ export function App() {
 
       {state.gamePhase === 'playing' && (
         <>
-          <Hud />
+          <Hud onShowHighscores={() => setShowHighscores(true)} />
           <ObjectiveTracker />
           <ControlsLegend />
           <Toasts />
@@ -51,6 +53,7 @@ export function App() {
           )}
           {state.activeDialogue && <DialoguePanel npcId={state.activeDialogue.npcId} />}
           {state.activeInject && <InjectModal injectId={state.activeInject.id} />}
+          {showHighscores && <HighscoreModal onClose={() => setShowHighscores(false)} />}
         </>
       )}
 
